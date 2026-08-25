@@ -183,3 +183,18 @@ h1, h2, h3,
   background-clip: padding-box, padding-box, border-box;
 }
 
+/* ---------- Section emblem icons ---------- */
+.page-icon {
+  display: block;
+  width: 68px;
+  height: 68px;
+  margin: 0 auto 12px;
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.55));
+}
+
+.mode-card .icon img {
+  width: 44px;
+  height: 44px;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.5));
+}
+
