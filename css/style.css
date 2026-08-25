@@ -929,17 +929,25 @@ a {
 .badge-chip {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   background: var(--bg-soft);
   border: 1px solid rgba(255, 212, 71, 0.3);
   border-radius: 999px;
-  padding: 8px 16px;
+  padding: 6px 16px 6px 6px;
   font-size: 13px;
   font-weight: 700;
 }
 
 .badge-icon {
   font-size: 18px;
+}
+
+.badge-icon-img {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: block;
+  flex-shrink: 0;
 }
 
 .history-list {

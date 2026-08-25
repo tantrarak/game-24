@@ -13,6 +13,12 @@
     { id: 'deity', icon: '🔱', name: 'เทพเจ้า', test: s => s.maxScore >= 100000 }
   ];
 
+  // Illustrated medal art (assets/badge-<id>.png) — falls back to the emoji
+  // in BADGES above if the image is ever missing.
+  function badgeIconHtml(b) {
+    return `<img src="assets/badge-${b.id}.png?v=1" alt="" class="badge-icon-img" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'badge-icon',textContent:'${b.icon}'}))">`;
+  }
+
   async function fetchHistory(userId, limit) {
     const { data, error } = await sb
       .from('scores')
@@ -62,7 +68,7 @@
     badges.forEach(b => {
       const el = document.createElement('div');
       el.className = 'badge-chip';
-      el.innerHTML = `<span class="badge-icon">${b.icon}</span><span class="badge-name">${UI24.escapeHtml(b.name)}</span>`;
+      el.innerHTML = `${badgeIconHtml(b)}<span class="badge-name">${UI24.escapeHtml(b.name)}</span>`;
       container.appendChild(el);
     });
   }
