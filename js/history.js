@@ -16,7 +16,7 @@
   // Illustrated medal art (assets/badge-<id>.png) — falls back to the emoji
   // in BADGES above if the image is ever missing.
   function badgeIconHtml(b) {
-    return `<img src="assets/badge-${b.id}.png?v=1" alt="" class="badge-icon-img" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'badge-icon',textContent:'${b.icon}'}))">`;
+    return `<img src="assets/badge-${b.id}.png?v=2" alt="" class="badge-icon-img" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'badge-icon',textContent:'${b.icon}'}))">`;
   }
 
   async function fetchHistory(userId, limit) {
