@@ -12,11 +12,14 @@
 <meta property="og:url" content="https://tantrarak.github.io/game-24/guide">
 <meta name="twitter:card" content="summary">
 <link rel="icon" type="image/png" href="assets/favicon-32.png?v=3">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&display=swap">
 <link rel="stylesheet" href="css/style.css?v=2">
 <link rel="stylesheet" href="css/game.css?v=2">
 <link rel="stylesheet" href="css/guide.css?v=2">
 <link rel="stylesheet" href="css/responsive.css?v=2">
-<link rel="stylesheet" href="css/fantasy.css?v=4">
+<link rel="stylesheet" href="css/fantasy.css?v=5">
 </head>
 <body>
   <nav class="site-nav">
@@ -84,7 +87,7 @@
       <h2 class="shimmer-text">โหมดเกม</h2>
       <div class="guide-mode-grid">
         <div class="guide-mode-card">
-          <div class="icon">📘</div>
+          <div class="icon"><img src="assets/nav-icon-practice.png?v=2" alt=""></div>
           <h3>PRACTICE</h3>
           <ul>
             <li>ไม่จำกัดเวลา ตอบผิดลองใหม่ได้เรื่อยๆ</li>
@@ -93,7 +96,7 @@
           </ul>
         </div>
         <div class="guide-mode-card">
-          <div class="icon">⏱️</div>
+          <div class="icon"><img src="assets/nav-icon-challenge.png?v=2" alt=""></div>
           <h3>CHALLENGE</h3>
           <ul>
             <li>มีเวลาจำกัดต่อข้อ (สั้นลงเมื่อระดับยากขึ้น)</li>
@@ -136,15 +139,15 @@
     <section class="panel guide-section">
       <h2 class="shimmer-text">เหรียญตรา</h2>
       <p>ปลดล็อกอัตโนมัติจากประวัติการเล่นโหมด Challenge สะสม<strong>ทุกซีซัน</strong> (ไม่รีเซ็ตตอนเริ่มซีซันใหม่) ดูของตัวเองได้ที่หน้า <a href="history">ประวัติของฉัน</a></p>
-      <ul class="guide-score-list">
-        <li><strong>🌱 มือใหม่หัดเล่น</strong> — เล่นจบ Challenge ครบ 1 เกม</li>
-        <li><strong>🎮 นักสู้ 10 เกม</strong> — เล่นจบ Challenge ครบ 10 เกม</li>
-        <li><strong>⚔️ นักสู้ 50 เกม</strong> — เล่นจบ Challenge ครบ 50 เกม</li>
-        <li><strong>🔥 สตรีคเทพ (10+)</strong> — เคยทำสตรีคตอบถูกติดต่อกัน 10 ครั้งขึ้นไปในเกมเดียว</li>
-        <li><strong>🎯 แม่นยำ (≥80%)</strong> — ตอบทั้งหมดสะสมอย่างน้อย 20 ข้อ และความแม่นยำเฉลี่ยรวม ≥ 80%</li>
-        <li><strong>👑 Expert Master</strong> — เคยเล่นและจบเกมที่ระดับ 5 (Expert) และตอบถูกติดต่อกัน 3 ข้อขึ้นไปในเกมนั้น</li>
-        <li><strong>💯 คะแนนทะลุ 1000</strong> — เคยทำคะแนนรวมในเกมเดียว 1,000 คะแนนขึ้นไป</li>
-        <li><strong>🔱 เทพเจ้า</strong> — เคยทำคะแนนรวมในเกมเดียว 100,000 คะแนนขึ้นไป</li>
+      <ul class="guide-score-list guide-badge-list">
+        <li><img src="assets/badge-starter.png?v=3" alt=""><strong>มือใหม่หัดเล่น</strong> — เล่นจบ Challenge ครบ 1 เกม</li>
+        <li><img src="assets/badge-warrior10.png?v=3" alt=""><strong>นักสู้ 10 เกม</strong> — เล่นจบ Challenge ครบ 10 เกม</li>
+        <li><img src="assets/badge-warrior50.png?v=3" alt=""><strong>นักสู้ 50 เกม</strong> — เล่นจบ Challenge ครบ 50 เกม</li>
+        <li><img src="assets/badge-streak10.png?v=3" alt=""><strong>สตรีคเทพ (10+)</strong> — เคยทำสตรีคตอบถูกติดต่อกัน 10 ครั้งขึ้นไปในเกมเดียว</li>
+        <li><img src="assets/badge-accurate.png?v=3" alt=""><strong>แม่นยำ (≥80%)</strong> — ตอบทั้งหมดสะสมอย่างน้อย 20 ข้อ และความแม่นยำเฉลี่ยรวม ≥ 80%</li>
+        <li><img src="assets/badge-expert.png?v=3" alt=""><strong>Expert Master</strong> — เคยเล่นและจบเกมที่ระดับ 5 (Expert) และตอบถูกติดต่อกัน 3 ข้อขึ้นไปในเกมนั้น</li>
+        <li><img src="assets/badge-kilo.png?v=3" alt=""><strong>คะแนนทะลุ 1000</strong> — เคยทำคะแนนรวมในเกมเดียว 1,000 คะแนนขึ้นไป</li>
+        <li><img src="assets/badge-deity.png?v=3" alt=""><strong>เทพเจ้า</strong> — เคยทำคะแนนรวมในเกมเดียว 100,000 คะแนนขึ้นไป</li>
       </ul>
       <p class="guide-note">เหรียญตราไม่มีผลต่อคะแนน Leaderboard เป็นแค่รางวัลสะสมความสำเร็จส่วนตัว</p>
     </section>

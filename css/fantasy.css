@@ -4,8 +4,6 @@
    art is added incrementally as more assets arrive — see .mascot-lion below;
    pages without an asset yet just keep the CSS-only ornate look. */
 
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&display=swap');
-
 :root {
   --bg: #090c1a;
   --bg-soft: #10142c;
@@ -192,10 +190,29 @@ h1, h2, h3,
   filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.55));
 }
 
-.mode-card .icon img {
+.mode-card .icon img,
+.guide-mode-card .icon img {
   width: 44px;
   height: 44px;
   filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.5));
+}
+
+.guide-badge-list {
+  padding-left: 0 !important;
+}
+
+.guide-badge-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  list-style: none;
+  margin-bottom: 6px;
+}
+
+.guide-badge-list img {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
 }
 
 .heading-flanked {
