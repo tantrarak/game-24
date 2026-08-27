@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&display=swap">
 <link rel="stylesheet" href="css/style.css?v=2">
-<link rel="stylesheet" href="css/game.css?v=2">
+<link rel="stylesheet" href="css/game.css?v=3">
 <link rel="stylesheet" href="css/responsive.css?v=2">
 <link rel="stylesheet" href="css/fantasy.css?v=5">
 </head>
@@ -92,6 +92,7 @@
         <div id="expression-display" class="empty">สร้างสมการของคุณที่นี่...</div>
         <div id="feedback-container" class="feedback-container"></div>
       </div>
+      <p class="expr-hint">แตะตัวเลข/เครื่องหมายในสมการ เพื่อลบตั้งแต่จุดนั้นเป็นต้นไป</p>
 
       <div class="keypad">
         <button class="op-btn" id="op-open" data-op="(">(</button>
@@ -138,7 +139,7 @@
   <script src="js/ui.js"></script>
   <script src="js/auth.js?v=2"></script>
   <script src="js/sound.js"></script>
-  <script src="js/game.js?v=2"></script>
+  <script src="js/game.js?v=3"></script>
   <script>
     (async () => {
       const overlay = document.getElementById('auth-gate-overlay');

@@ -59,6 +59,7 @@
       this.timerId = null;
       this.remainingMs = 0;
       this.totalMs = 0;
+      this.locked = false; // true while a challenge submit-answer request is in flight
     }
 
     init() {
@@ -243,11 +244,26 @@
     }
 
     renderExpression() {
-      const str = this.tokens
-        .map(t => (t.type === 'num' ? t.value : OP_SYMBOLS[t.value] || t.value))
-        .join(' ');
-      this.el.expressionDisplay.textContent = str || 'สร้างสมการของคุณที่นี่...';
-      this.el.expressionDisplay.classList.toggle('empty', this.tokens.length === 0);
+      const displayEl = this.el.expressionDisplay;
+      displayEl.classList.toggle('empty', this.tokens.length === 0);
+      displayEl.innerHTML = '';
+
+      if (!this.tokens.length) {
+        displayEl.textContent = 'สร้างสมการของคุณที่นี่...';
+        return;
+      }
+
+      // Each token is tappable — tapping one removes it and everything
+      // after it, so fixing a misplaced paren (or any earlier mistake)
+      // doesn't require backspacing one token at a time back to it.
+      this.tokens.forEach((t, idx) => {
+        const span = document.createElement('span');
+        span.className = 'expr-token';
+        span.textContent = t.type === 'num' ? t.value : OP_SYMBOLS[t.value] || t.value;
+        span.addEventListener('click', () => this.truncateAt(idx));
+        displayEl.appendChild(span);
+        if (idx < this.tokens.length - 1) displayEl.appendChild(document.createTextNode(' '));
+      });
     }
 
     updateButtonStates() {
@@ -302,9 +318,13 @@
       this.updateButtonStates();
     }
 
-    backspace() {
+    // Pops exactly one token off the end, restoring card/parenDepth/state
+    // to match — the single source of truth both backspace() and
+    // truncateAt() build on, so removing several tokens at once can't
+    // drift from what removing them one at a time would produce.
+    popLastToken() {
       const last = this.tokens.pop();
-      if (!last) return;
+      if (!last) return false;
       if (last.type === 'num') {
         const card = [...this.cards].reverse().find(c => c.used && c.value === last.value);
         if (card) card.used = false;
@@ -318,6 +338,21 @@
         this.parenDepth++;
         this.state = 'operator';
       }
+      return true;
+    }
+
+    backspace() {
+      if (!this.popLastToken()) return;
+      this.renderCards();
+      this.renderExpression();
+      this.updateButtonStates();
+    }
+
+    // Tapped a token in the expression display — drop it and everything
+    // typed after it in one go, instead of backspacing one token at a time.
+    truncateAt(idx) {
+      if (this.locked || idx >= this.tokens.length) return;
+      while (this.tokens.length > idx) this.popLastToken();
       this.renderCards();
       this.renderExpression();
       this.updateButtonStates();
@@ -359,11 +394,13 @@
       // Challenge mode: the server verifies the answer and decides the
       // score — this client never computes or asserts correctness itself.
       this.el.submitBtn.disabled = true;
+      this.locked = true;
       const tokensPayload = this.tokens.map(t => ({ type: t.type, value: t.value }));
       const result = await this.callEdgeFunction('submit-answer', {
         roundId: this.currentRoundId,
         tokens: tokensPayload
       });
+      this.locked = false;
       this.updateButtonStates();
 
       if (!result || result.error) {
