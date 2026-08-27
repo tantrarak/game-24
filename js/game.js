@@ -256,14 +256,53 @@
       // Each token is tappable — tapping one removes it and everything
       // after it, so fixing a misplaced paren (or any earlier mistake)
       // doesn't require backspacing one token at a time back to it.
+      //
+      // A thin "(" marker also sits in every gap where opening a group
+      // would be valid (the start of the expression, or right after an
+      // operator or another "(") — letting an earlier "(" be added
+      // without rebuilding everything typed after it.
+      const addGap = idx => {
+        if (!this.canOpenParenAt(idx)) return;
+        const gap = document.createElement('span');
+        gap.className = 'expr-gap';
+        gap.textContent = '+';
+        gap.title = 'แทรก ( ตรงนี้';
+        gap.addEventListener('click', () => this.insertOpenParenAt(idx));
+        displayEl.appendChild(gap);
+      };
+
+      addGap(0);
       this.tokens.forEach((t, idx) => {
         const span = document.createElement('span');
         span.className = 'expr-token';
         span.textContent = t.type === 'num' ? t.value : OP_SYMBOLS[t.value] || t.value;
         span.addEventListener('click', () => this.truncateAt(idx));
         displayEl.appendChild(span);
-        if (idx < this.tokens.length - 1) displayEl.appendChild(document.createTextNode(' '));
+        displayEl.appendChild(document.createTextNode(' '));
+        addGap(idx + 1);
       });
+    }
+
+    // Whether inserting a "(" right before tokens[idx] would still be a
+    // valid place to start a group — same rule the normal open-paren
+    // keypad button already uses (only when an operand could start),
+    // just evaluated at an arbitrary position instead of only the end.
+    canOpenParenAt(idx) {
+      if (idx === 0) return true;
+      const prev = this.tokens[idx - 1];
+      return prev.type === 'op' || (prev.type === 'paren' && prev.value === '(');
+    }
+
+    // Splicing an extra "(" in anywhere only ever adds one more unclosed
+    // group to the running total — parenDepth is just a count, not
+    // position-sensitive — so the matching ")" still gets typed normally
+    // at the end later, same as always.
+    insertOpenParenAt(idx) {
+      if (this.locked || !this.canOpenParenAt(idx)) return;
+      this.tokens.splice(idx, 0, { type: 'paren', value: '(' });
+      this.parenDepth++;
+      this.renderExpression();
+      this.updateButtonStates();
     }
 
     updateButtonStates() {
