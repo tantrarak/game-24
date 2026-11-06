@@ -505,3 +505,13 @@ h2.shimmer-text {
   margin-bottom: 14px;
   color: #cfd2f2;
 }
+
+/* guide "game modes" cards: emblem and title centred */
+.guide-mode-card .icon {
+  display: flex;
+  justify-content: center;
+}
+
+.guide-mode-card h3 {
+  text-align: center;
+}
