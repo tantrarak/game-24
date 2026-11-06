@@ -1,0 +1,440 @@
+/* jewel.css — glossy "jewel + gold trim" game-UI skin, loaded last (after fantasy.css).
+   Pure CSS plus one tiny inline SVG for the gold scrollwork, so it adds no
+   image downloads. Restyles existing class names in place:
+   - framed boxes (.panel, .mode-card, ...) get a thick gold rim, a glossy
+     jewel-tone body and a gem set in gold scrollwork on the top edge;
+     the gem colour comes from --gem / --gem-dark so variants are one line
+   - buttons become glossy candy bars with a gold rim
+   - headings get gold gradient lettering; Thai text uses Mitr / Prompt */
+
+/* Mitr/Prompt draw + − × ÷ at lowercase size, which made operators hard to
+   read — borrow those few glyphs from a system font via unicode-range. */
+@font-face {
+  font-family: 'Sym24';
+  src: local('Segoe UI Semibold'), local('Segoe UI'), local('Roboto'), local('Helvetica Neue'), local('Arial');
+  unicode-range: U+002B, U+002D, U+00D7, U+00F7, U+2212;
+  font-weight: 100 900;
+}
+
+:root {
+  --font: 'Sym24', 'Prompt', 'Segoe UI', Tahoma, 'Leelawadee UI', Arial, sans-serif;
+  --font-display: 'Sym24', 'Mitr', 'Prompt', 'Leelawadee UI', sans-serif;
+  --gold-hi: #fff3bf;
+  --gold: #f6c544;
+  --gold-lo: #b9780f;
+  --gold-edge: #5b3507;
+  --jewel-1: #3d2c86;
+  --jewel-2: #1c1a4f;
+  --gem: #ff4f9a;
+  --gem-dark: #8a0f4a;
+  --gold-rim: linear-gradient(180deg, var(--gold-hi), var(--gold) 35%, var(--gold-lo) 72%, #f9dc84);
+  /* soft top sheen for big boxes (no hard edge — it looked like a seam on tall panels) */
+  --gloss: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0) 120px);
+}
+
+body {
+  font-family: var(--font);
+}
+
+/* Latin logo wordmarks keep the engraved Cinzel look */
+.brand-title,
+.gate-logo {
+  font-family: 'Cinzel', var(--font-display);
+}
+
+/* ---------- Big framed boxes ---------- */
+.panel,
+.mode-card,
+.gate-card,
+.auth-wrap,
+.modal-box,
+.score-card,
+.guide-mode-card {
+  position: relative;
+  border: 3px solid transparent;
+  border-radius: 20px;
+  background-image:
+    var(--gloss),
+    linear-gradient(165deg, var(--jewel-1), var(--jewel-2)),
+    var(--gold-rim);
+  background-origin: border-box;
+  background-clip: padding-box, padding-box, border-box;
+  box-shadow:
+    0 0 0 2px var(--gold-edge),
+    inset 0 2px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -10px 24px rgba(0, 0, 0, 0.35),
+    0 18px 40px rgba(0, 0, 0, 0.55);
+}
+
+/* gold scrollwork on the top edge ... */
+.panel::before,
+.mode-card::before,
+.gate-card::before,
+.auth-wrap::before,
+.modal-box::before,
+.score-card::before,
+.guide-mode-card::before {
+  content: '';
+  position: absolute;
+  top: -16px;
+  left: 50%;
+  width: 128px;
+  height: 28px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 30'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23fff3bf'/%3E%3Cstop offset='.45' stop-color='%23f6c544'/%3E%3Cstop offset='1' stop-color='%23a86a12'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg fill='url(%23g)' stroke='%235b3507' stroke-width='1.3' stroke-linejoin='round'%3E%3Cpath d='M54 17C42 6 25 7 17 14c-5 4-3 11 3 10 5-1 5-7 0-7 9-6 22-4 34 6z'/%3E%3Cpath d='M86 17c12-11 29-10 37-3 5 4 3 11-3 10-5-1-5-7 0-7-9-6-22-4-34 6z'/%3E%3Cellipse cx='70' cy='15' rx='20' ry='13'/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
+  filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.45));
+}
+
+/* ... with a faceted gem set in the middle */
+.panel::after,
+.mode-card::after,
+.gate-card::after,
+.auth-wrap::after,
+.modal-box::after,
+.score-card::after,
+.guide-mode-card::after {
+  content: '';
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  width: 24px;
+  height: 15px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 34% 30%, #fff 0 9%, rgba(255, 255, 255, 0) 24%),
+    radial-gradient(ellipse at 50% 60%, var(--gem) 0 40%, var(--gem-dark) 100%);
+  box-shadow: inset 0 -2px 3px rgba(0, 0, 0, 0.35), 0 0 8px var(--gem);
+}
+
+/* colour variants: practice = sapphire, challenge = ruby */
+.mode-card:nth-child(1),
+.guide-mode-card:nth-child(1) {
+  --jewel-1: #1f4f9a;
+  --jewel-2: #13265a;
+  --gem: #4fe3ff;
+  --gem-dark: #0d6c9c;
+}
+
+.mode-card:nth-child(2),
+.guide-mode-card:nth-child(2) {
+  --jewel-1: #7a1f55;
+  --jewel-2: #33103a;
+  --gem: #ff5c6c;
+  --gem-dark: #8a0f22;
+}
+
+.score-card {
+  --gem: #5dff9a;
+  --gem-dark: #0f7a3e;
+}
+
+.mode-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 0 0 2px var(--gold-edge),
+    0 0 22px rgba(255, 212, 90, 0.35),
+    inset 0 2px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -10px 24px rgba(0, 0, 0, 0.35),
+    0 22px 44px rgba(0, 0, 0, 0.6);
+}
+
+/* panels in the guide stack closely — give the gem room */
+.guide-section,
+.panel + .panel {
+  margin-top: 30px;
+}
+
+/* ---------- Small framed rows / chips: thin gold rim, no gem ---------- */
+.rank-row,
+.admin-row,
+.history-row,
+.stat-chip,
+.complete-stat,
+.badge-chip,
+.guide-level-row,
+.guide-num {
+  border: 2px solid transparent;
+  background-image:
+    var(--gloss),
+    linear-gradient(165deg, rgba(61, 44, 134, 0.92), rgba(28, 26, 79, 0.92)),
+    var(--gold-rim);
+  background-origin: border-box;
+  background-clip: padding-box, padding-box, border-box;
+  box-shadow: 0 0 0 1px var(--gold-edge), 0 6px 14px rgba(0, 0, 0, 0.35);
+}
+
+.rank-row.top-1 {
+  background-image:
+    var(--gloss),
+    linear-gradient(165deg, rgba(150, 100, 20, 0.95), rgba(70, 40, 10, 0.95)),
+    var(--gold-rim);
+  box-shadow: 0 0 0 1px var(--gold-edge), 0 0 16px rgba(255, 212, 90, 0.35);
+}
+
+/* ---------- Headings: gold lettering ---------- */
+h1, h2, h3, h4,
+.section-title,
+.panel h2,
+.auth-wrap h2,
+.mode-card h3,
+.guide-section h2,
+.guide-mode-card h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.section-title,
+.panel h2,
+.auth-wrap h2,
+.modal-box h2,
+.mode-card h3,
+.guide-mode-card h3,
+.guide-section h2,
+.hero h1 {
+  background: linear-gradient(180deg, #fffbe6 0%, #ffe07a 40%, #f2a524 75%, #ffd45a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 2px 0 var(--gold-edge)) drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
+}
+
+/* shimmer headings: gold base with a white sheen sweeping across */
+.shimmer-text,
+h1.shimmer-text,
+h2.shimmer-text {
+  background:
+    linear-gradient(100deg, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0.9) 50%, rgba(255, 255, 255, 0) 60%) 0 0 / 250% 100% no-repeat,
+    linear-gradient(180deg, #fffbe6 0%, #ffe07a 40%, #f2a524 75%, #ffd45a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: jewel-sheen 4.5s linear infinite;
+}
+
+@keyframes jewel-sheen {
+  from { background-position: 150% 0, 0 0; }
+  to { background-position: -150% 0, 0 0; }
+}
+
+/* the cyan "24" accents stay gem-blue so the wordmark keeps its two tones */
+.hero h1 .accent,
+.shimmer-text .accent {
+  background: linear-gradient(180deg, #d9fbff, #4fe3ff 55%, #1a8fd1);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer-text {
+    animation: none;
+    background: linear-gradient(180deg, #fffbe6 0%, #ffe07a 40%, #f2a524 75%, #ffd45a 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}
+
+.hero-badge,
+.level-tag {
+  font-family: var(--font-display);
+  font-weight: 500;
+  color: var(--gold-hi);
+  background: linear-gradient(180deg, rgba(120, 70, 10, 0.85), rgba(60, 30, 5, 0.85));
+  border: 1px solid var(--gold);
+  box-shadow: 0 0 0 1px var(--gold-edge), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.panel-sub,
+.section-sub,
+.mode-card p,
+.hero p {
+  color: #cfd2f2;
+}
+
+/* ---------- Buttons: glossy candy bars with a gold rim ---------- */
+.btn {
+  --btn-1: #ffb54a;
+  --btn-2: #ee7410;
+  --btn-ink: #8a3c00;
+  position: relative;
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  border-radius: 14px;
+  border: 2px solid #ffe29a;
+  color: #fff;
+  text-shadow: 0 2px 0 var(--btn-ink), 0 0 3px var(--btn-ink);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.12) 48%, rgba(255, 255, 255, 0) 50%),
+    linear-gradient(180deg, var(--btn-1), var(--btn-2));
+  box-shadow:
+    0 0 0 2px var(--gold-edge),
+    inset 0 -4px 0 rgba(0, 0, 0, 0.2),
+    0 8px 18px rgba(0, 0, 0, 0.4);
+}
+
+.btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+  box-shadow:
+    0 0 0 2px var(--gold-edge),
+    inset 0 -4px 0 rgba(0, 0, 0, 0.2),
+    0 0 16px rgba(255, 212, 90, 0.45),
+    0 10px 22px rgba(0, 0, 0, 0.45);
+}
+
+.btn-primary,
+.nav-menu a.nav-cta { --btn-1: #ffb54a; --btn-2: #ee7410; --btn-ink: #8a3c00; }
+.btn-outline { --btn-1: #5fc8ff; --btn-2: #1f6fd6; --btn-ink: #0b3a7a; }
+.btn-ghost   { --btn-1: #a77bff; --btn-2: #5b2fc0; --btn-ink: #2e1170; }
+.btn-danger  { --btn-1: #ff6f9a; --btn-2: #c2185b; --btn-ink: #6a0a2e; }
+
+/* fantasy.css styled these by colour — reset to the shared candy look */
+.btn-primary,
+.btn-outline,
+.btn-ghost,
+.btn-danger,
+.btn-outline:hover:not(:disabled) {
+  color: #fff;
+  border-color: #ffe29a;
+}
+
+.nav-menu a.nav-cta {
+  color: #fff;
+  border: 2px solid #ffe29a;
+  border-radius: 12px;
+  text-shadow: 0 1px 0 var(--btn-ink);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.12) 48%, rgba(255, 255, 255, 0) 50%),
+    linear-gradient(180deg, var(--btn-1), var(--btn-2));
+  box-shadow: 0 0 0 2px var(--gold-edge);
+}
+
+.nav-menu a {
+  font-family: var(--font-display);
+  font-weight: 500;
+}
+
+/* ---------- Game tiles ---------- */
+.number-card,
+.op-btn,
+.level-btn {
+  font-family: var(--font-display);
+  border: 3px solid transparent;
+  background-origin: border-box;
+  background-clip: padding-box, padding-box, border-box;
+  box-shadow: 0 0 0 2px var(--gold-edge), inset 0 -4px 0 rgba(0, 0, 0, 0.22), 0 6px 14px rgba(0, 0, 0, 0.4);
+  color: #fff;
+}
+
+/* number cards: sapphire gems */
+.number-card {
+  font-weight: 600;
+  text-shadow: 0 3px 0 #0b2f6e;
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.1) 46%, rgba(255, 255, 255, 0) 48%),
+    linear-gradient(180deg, #4fb4ff, #1d4fc4),
+    var(--gold-rim);
+}
+
+.number-card:hover:not(:disabled) {
+  border-color: transparent;
+  box-shadow: 0 0 0 2px var(--gold-edge), 0 0 18px rgba(79, 195, 255, 0.55), 0 8px 16px rgba(0, 0, 0, 0.45);
+}
+
+/* operator keys: amethyst; the four symbols in ruby */
+.op-btn {
+  font-weight: 600;
+  text-shadow: 0 2px 0 #2e1170;
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.08) 46%, rgba(255, 255, 255, 0) 48%),
+    linear-gradient(180deg, #8f63f0, #4a239e),
+    var(--gold-rim);
+}
+
+.op-btn.op-symbol {
+  text-shadow: 0 2px 0 #6a0a2e;
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.08) 46%, rgba(255, 255, 255, 0) 48%),
+    linear-gradient(180deg, #ff6f9a, #b3164f),
+    var(--gold-rim);
+}
+
+.op-btn:hover:not(:disabled) {
+  color: #fff;
+  filter: brightness(1.12);
+}
+
+/* level picker: amethyst, selected one turns emerald */
+.level-btn {
+  background-image:
+    var(--gloss),
+    linear-gradient(180deg, #5a3cb8, #2a1a6e),
+    var(--gold-rim);
+}
+
+.level-btn.selected {
+  color: #fff;
+  border-color: transparent;
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.08) 46%, rgba(255, 255, 255, 0) 48%),
+    linear-gradient(180deg, #3fe08a, #0f8a4a),
+    var(--gold-rim);
+  background-clip: padding-box, padding-box, border-box;
+  box-shadow: 0 0 0 2px var(--gold-edge), 0 0 18px rgba(63, 224, 138, 0.5);
+}
+
+.level-btn.selected .lv-num,
+.level-btn.selected .lv-mult {
+  color: #fff;
+  text-shadow: 0 2px 0 #0a5a30;
+}
+
+/* ---------- Inputs & expression box: dark inset wells with gold edge ---------- */
+.field input,
+.field select,
+.admin-toolbar input,
+.leaderboard-filters input,
+#expression-display {
+  font-family: var(--font);
+  background: linear-gradient(180deg, rgba(8, 6, 26, 0.85), rgba(22, 18, 54, 0.85));
+  border: 2px solid rgba(246, 197, 68, 0.55);
+  border-radius: 12px;
+  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.5);
+  color: var(--text);
+}
+
+.field input:focus,
+.field select:focus,
+.admin-toolbar input:focus,
+.leaderboard-filters input:focus {
+  outline: none;
+  border-color: #ffd45a;
+  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.5), 0 0 0 3px rgba(255, 212, 90, 0.22);
+}
+
+#expression-display {
+  font-family: var(--font-display);
+  font-weight: 500;
+}
+
+.field label {
+  font-family: var(--font-display);
+  font-weight: 500;
+  color: var(--gold-hi);
+}
+
+.stat-chip .stat-label,
+.complete-stat .cs-label {
+  color: var(--gold);
+}
+
+.stat-chip .stat-value,
+.complete-stat .cs-value {
+  font-family: var(--font-display);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
+}
