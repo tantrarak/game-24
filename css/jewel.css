@@ -49,7 +49,8 @@ body {
 .auth-wrap,
 .modal-box,
 .score-card,
-.guide-mode-card {
+.guide-mode-card,
+#game-panel {
   position: relative;
   border: 3px solid transparent;
   border-radius: 20px;
@@ -73,7 +74,8 @@ body {
 .auth-wrap::before,
 .modal-box::before,
 .score-card::before,
-.guide-mode-card::before {
+.guide-mode-card::before,
+#game-panel::before {
   content: '';
   position: absolute;
   top: -16px;
@@ -93,7 +95,8 @@ body {
 .auth-wrap::after,
 .modal-box::after,
 .score-card::after,
-.guide-mode-card::after {
+.guide-mode-card::after,
+#game-panel::after {
   content: '';
   position: absolute;
   top: -9px;
@@ -437,4 +440,68 @@ h2.shimmer-text {
 .complete-stat .cs-value {
   font-family: var(--font-display);
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
+}
+
+/* ---------- In-game screen (practice / challenge) ----------
+   #game-panel isn't a .panel, so it gets the jewel frame here, emerald gem. */
+#game-panel {
+  --gem: #5dff9a;
+  --gem-dark: #0f7a3e;
+  padding: 26px 22px 22px;
+  margin-top: 16px;
+}
+
+#game-panel.hidden {
+  display: none;
+}
+
+.sound-toggle {
+  border: 2px solid transparent;
+  border-radius: 12px;
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.08) 46%, rgba(255, 255, 255, 0) 48%),
+    linear-gradient(180deg, #8f63f0, #4a239e),
+    var(--gold-rim);
+  background-origin: border-box;
+  background-clip: padding-box, padding-box, border-box;
+  box-shadow: 0 0 0 1px var(--gold-edge), 0 4px 10px rgba(0, 0, 0, 0.35);
+}
+
+.timer-label-row {
+  font-family: var(--font-display);
+  color: var(--gold);
+}
+
+#timer-text {
+  font-family: var(--font-display);
+  color: var(--gold-hi);
+}
+
+/* timer: a gold-rimmed tube with a glossy liquid bar */
+.timer-track {
+  height: 14px;
+  border: 2px solid transparent;
+  background-image: linear-gradient(180deg, #08061a, #1c1640), var(--gold-rim);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  box-shadow: 0 0 0 1px var(--gold-edge), inset 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+#timer-bar {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.1) 45%, rgba(255, 255, 255, 0) 50%),
+    linear-gradient(90deg, #4fe3ff, #3b7bff);
+  box-shadow: 0 0 8px rgba(79, 227, 255, 0.6);
+}
+
+#timer-wrap.low #timer-bar {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.1) 45%, rgba(255, 255, 255, 0) 50%),
+    linear-gradient(90deg, #ff5c7a, #ffb347);
+  box-shadow: 0 0 10px rgba(255, 92, 122, 0.7);
+}
+
+.expr-hint {
+  margin-bottom: 14px;
+  color: #cfd2f2;
 }
