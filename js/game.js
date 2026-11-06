@@ -140,6 +140,7 @@
       this.el.setupPanel.classList.add('hidden');
       this.el.completePanel.classList.add('hidden');
       this.el.gamePanel.classList.remove('hidden');
+      if (global.Battle24) Battle24.start();
 
       this.updateStatsUI();
 
@@ -466,6 +467,7 @@
 
     registerWrong(opts) {
       if (global.Sound24) Sound24.wrong();
+      if (global.Battle24) Battle24.dragonWins();
       this.wrongCount++;
       this.streak = 0;
       this.updateStatsUI();
@@ -511,6 +513,7 @@
     // submit-answer — the client just reflects them in the UI.
     handleCorrectServer(result) {
       if (global.Sound24) Sound24.correct();
+      if (global.Battle24) Battle24.knightWins();
       this.correctCount++;
       this.streak = result.newStreak;
       this.bestStreak = Math.max(this.bestStreak, this.streak);
@@ -531,6 +534,7 @@
     }
 
     skip() {
+      if (global.Battle24) Battle24.dragonWins();
       this.wrongCount++;
       this.streak = 0;
       this.updateStatsUI();
@@ -604,12 +608,15 @@
       this.running = false;
       this.wrongCount++;
       if (global.Sound24) Sound24.wrong();
+      if (global.Battle24) Battle24.dragonWins();
       UI24.popFeedback(this.el.feedbackContainer, '⏰ หมดเวลา!', 'wrong');
       this.endSession();
     }
 
     endSession() {
       this.running = false;
+      // let a final dragon/knight sequence finish before freezing the strip
+      if (global.Battle24) setTimeout(() => { if (!this.running) Battle24.stop(); }, 2000);
       this.stopQuestionTimer();
       if (global.Sound24) Sound24.complete();
       const totalMs = performance.now() - this.sessionStart;
