@@ -515,3 +515,18 @@ h2.shimmer-text {
 .guide-mode-card h3 {
   text-align: center;
 }
+
+/* home page mode cards: emblem, title and blurb centred */
+.mode-card {
+  align-items: center;
+  text-align: center;
+}
+
+.mode-card .btn {
+  align-self: stretch;
+}
+
+/* style.css turns the border blue on hover, which hid the gold rim */
+.mode-card:hover {
+  border-color: transparent;
+}
