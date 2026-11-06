@@ -2,17 +2,60 @@ name: Keep Supabase Alive
 
 on:
   schedule:
-    # Every Monday and Thursday at 03:00 UTC — well under Supabase free
-    # tier's 7-day inactivity auto-pause window.
-    - cron: '0 3 * * 1,4'
+    # Daily at 03:00 UTC (10:00 Thailand). The Supabase free tier pauses a
+    # project after ~7 idle days, and in Sep–Oct 2026 a twice-weekly ping
+    # still got the project paused — so ping every day.
+    - cron: '0 3 * * *'
   workflow_dispatch: {}
+
+permissions:
+  contents: write
 
 jobs:
   ping:
     runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: https://mmgsonaibdpzxqvymewf.supabase.co
+      SUPABASE_KEY: sb_publishable_zqZTwin6TSkriACDXKx0qQ_tWA4AZHY
     steps:
-      - name: Ping Supabase REST API
+      # Touch both the database (two real queries) and the auth service, so
+      # the activity looks like real app usage rather than a single request.
+      - name: Ping database (app_settings)
         run: |
-          curl -sf "https://mmgsonaibdpzxqvymewf.supabase.co/rest/v1/app_settings?select=current_season" \
-            -H "apikey: sb_publishable_zqZTwin6TSkriACDXKx0qQ_tWA4AZHY" \
-            -H "Authorization: Bearer sb_publishable_zqZTwin6TSkriACDXKx0qQ_tWA4AZHY"
+          curl -sf "$SUPABASE_URL/rest/v1/app_settings?select=current_season" \
+            -H "apikey: $SUPABASE_KEY" -H "Authorization: Bearer $SUPABASE_KEY"
+
+      - name: Ping database (leaderboard)
+        run: |
+          curl -sf "$SUPABASE_URL/rest/v1/leaderboard_view?select=*&limit=5" \
+            -H "apikey: $SUPABASE_KEY" -H "Authorization: Bearer $SUPABASE_KEY" > /dev/null
+
+      - name: Ping auth service
+        run: |
+          curl -sf "$SUPABASE_URL/auth/v1/health" -H "apikey: $SUPABASE_KEY"
+
+  # GitHub disables scheduled workflows after 60 days without a commit
+  # (this happened once already). When the repo has been idle for 45+ days,
+  # push a tiny commit so this workflow keeps running.
+  stay-enabled:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Commit a heartbeat if the repo has been idle
+        run: |
+          last=$(git log -1 --format=%ct)
+          idle_days=$(( ( $(date +%s) - last ) / 86400 ))
+          echo "Days since last commit: $idle_days"
+          if [ "$idle_days" -lt 45 ]; then
+            echo "Recent activity, nothing to do."
+            exit 0
+          fi
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > .github/keepalive-heartbeat.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/keepalive-heartbeat.txt
+          git commit -m "Keep-alive heartbeat (repo idle ${idle_days} days)"
+          git push
