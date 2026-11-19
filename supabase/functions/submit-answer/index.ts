@@ -23,6 +23,10 @@ const STREAK_STEP = 10;
 const STREAK_CAP = 10;
 const MAX_WRONG_ATTEMPTS = 8;
 const MAX_TOKENS = 40;
+// Extra allowance on top of a level's time limit for network latency: the
+// clock here starts when new-round issued the round, a little before the
+// player's on-screen countdown starts.
+const TIME_GRACE_MS = 5000;
 const MAX_FACTORIAL = 10;
 const MAX_ABS = 1e9;
 
@@ -208,6 +212,24 @@ Deno.serve(async req => {
       }
     }
     const correct = numbersMatch && result !== null && isTwentyFour(result);
+
+    // Enforce the level's time limit here rather than trusting the
+    // browser's countdown: an answer that arrives after time is up scores
+    // nothing and ends the round (the client then ends the session, and
+    // new-round refuses to continue a timed-out session).
+    const limitMs = (LEVEL_TIME_SECONDS[round.level] ?? 0) * 1000;
+    const sinceIssuedMs = Date.now() - new Date(round.created_at).getTime();
+    if (limitMs > 0 && sinceIssuedMs > limitMs + TIME_GRACE_MS) {
+      await adminClient
+        .from('rounds')
+        .update({ used: true, correct: false, answered_at: new Date().toISOString() })
+        .eq('id', roundId)
+        .eq('used', false);
+      return new Response(JSON.stringify({ correct: false, roundOver: true, timeUp: true, value: result }), {
+        status: 200,
+        headers: cors
+      });
+    }
 
     // Only a CORRECT answer consumes the round. A wrong guess does NOT
     // set used=true — the frontend lets a player retry the same question

@@ -114,7 +114,11 @@
       return;
     }
 
-    const [stats, season] = await Promise.all([getPlayerStats(user.id), getCurrentSeason()]);
+    const [stats, season, levelInfo] = await Promise.all([
+      getPlayerStats(user.id),
+      getCurrentSeason(),
+      global.Scoring24 ? Scoring24.fetchPlayerLevel(user.id) : null
+    ]);
     const total = stats ? stats.total_score : 0;
     const games = stats ? stats.games_played : 0;
     const streak = stats ? stats.best_streak : 0;
@@ -131,7 +135,9 @@
         <div class="score-card-stat"><span class="scs-value">${games}</span><span class="scs-label">เกมที่เล่น</span></div>
         <div class="score-card-stat"><span class="scs-value">${streak}</span><span class="scs-label">สตรีคสูงสุด</span></div>
       </div>
+      <div class="level-progress score-card-level"></div>
     `;
+    if (levelInfo) Scoring24.renderLevelProgress(container.querySelector('.score-card-level'), levelInfo);
   }
 
   function bindForm(formId, noteId, onSubmit) {

@@ -182,7 +182,7 @@
         ? `<div class="rd-expr">${UI24.escapeHtml(exprText)} = ?</div>
            <div class="rd-note">คำนวณไม่ได้ — เช่น หารด้วย 0, √ ของจำนวนลบ หรือ ! ที่ไม่ใช่จำนวนเต็ม 0–10</div>`
         : `<div class="rd-expr">${UI24.escapeHtml(exprText)} = <span class="rd-value">${shown}</span></div>
-           <div class="rd-note">ยังไม่ใช่ 24 ลองใหม่อีกครั้ง</div>`;
+           <div class="rd-note rd-note-soft">ยังไม่ใช่ 24 ลองใหม่อีกครั้ง</div>`;
       box.classList.remove('hidden');
       UI24.flash(box, 'rd-flash', 600);
     }
@@ -271,6 +271,11 @@
       this.updateButtonStates();
 
       const result = await this.callEdgeFunction('new-round', { level: this.level, sessionId: this.serverRowId });
+      if (result && result.error === 'session over') {
+        // the server says this timed session already ran out of time
+        this.timeUp();
+        return;
+      }
       if (result && result.error === 'level locked') {
         alert(`เลเวล ${this.level} ยังล็อกอยู่ ต้องเก็บคะแนนในเลเวลก่อนหน้าให้ครบก่อน`);
         this.running = false;
@@ -443,11 +448,14 @@
       this.updateButtonStates();
     }
 
-    // √ is a prefix: it applies to the number or (group) typed next, so the
-    // player is still expected to type an operand afterwards.
+    // √ opens its own group: one tap types "√(" so the root can cover a
+    // whole expression — √(7 + 9), √(3 × 3) — closed with ")" as usual.
+    // (A bare √9 left by backspacing the "(" still evaluates fine.)
     clickSqrt() {
       if (this.locked || this.state !== 'operand') return;
       this.tokens.push({ type: 'func', value: 'sqrt' });
+      this.tokens.push({ type: 'paren', value: '(' });
+      this.parenDepth++;
       this.renderExpression();
       this.updateButtonStates();
     }
@@ -574,6 +582,12 @@
       if (result.correct) {
         this.hideResult();
         this.handleCorrectServer(result);
+        return;
+      }
+      if (result.timeUp) {
+        // answer reached the server after the time limit: no points, game over
+        this.stopQuestionTimer();
+        this.timeUp();
         return;
       }
       this.showResult(exprText, result.value);

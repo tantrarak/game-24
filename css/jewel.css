@@ -723,3 +723,132 @@ h2.shimmer-text {
   padding: 2px 12px;
   margin-right: 8px;
 }
+
+/* home score card: level progress under the stats */
+.score-card-level {
+  margin: 14px auto 0;
+}
+
+/* ---------- Phones: compact game screen ----------
+   On a phone the "ตรวจคำตอบ" button used to sit below the fold, so every
+   answer needed a scroll. Trim spacing so the whole play area fits. */
+@media (max-width: 600px) {
+  .game-wrap {
+    padding: 14px 10px 40px;
+  }
+
+  #game-panel {
+    padding: 22px 12px 16px;
+    margin-top: 10px;
+  }
+
+  .game-topbar {
+    margin-bottom: 10px;
+    gap: 8px;
+  }
+
+  .level-tag {
+    font-size: 11px;
+    padding: 4px 10px;
+  }
+
+  .stat-chip {
+    min-width: 0;
+    padding: 4px 10px;
+  }
+
+  .sound-toggle {
+    width: 34px;
+    height: 34px;
+  }
+
+  .cards-row {
+    margin: 12px 0;
+    gap: 8px;
+  }
+
+  .number-card {
+    width: 60px;
+    height: 68px;
+    font-size: 26px;
+  }
+
+  #expression-display {
+    min-height: 46px;
+    padding: 9px 12px;
+  }
+
+  .expression-shell {
+    margin-bottom: 12px;
+  }
+
+  /* the tap-to-edit hint costs two lines on a phone; the guide explains it */
+  .expr-hint {
+    display: none;
+  }
+
+  .keypad {
+    gap: 7px;
+    margin-bottom: 12px;
+  }
+
+  .op-btn {
+    padding: 10px 0;
+    font-size: 18px;
+  }
+
+  .keypad-actions .btn {
+    padding: 11px 16px;
+  }
+
+  .result-display {
+    margin: -4px 0 12px;
+    padding: 8px 10px;
+  }
+
+  /* the red popup already says "ยังไม่ใช่ 24" */
+  .rd-note-soft {
+    display: none;
+  }
+
+  /* stat chips as one line ("SCORE 120") instead of two */
+  .stat-chip {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+  }
+
+  .stat-chip .stat-label,
+  .stat-chip .stat-value {
+    display: inline;
+  }
+
+  .stat-chip .stat-value {
+    font-size: 16px;
+  }
+
+  .timer-label-row {
+    margin-bottom: 3px;
+  }
+
+  #timer-wrap {
+    margin-bottom: 8px;
+  }
+}
+
+/* leaderboard header: less empty space between the title block and the list */
+.hero.hero-tight {
+  padding: 34px 20px 6px;
+}
+
+.hero.hero-tight p {
+  margin-bottom: 0;
+}
+
+.hero-tight + .leaderboard-wrap {
+  padding-top: 18px;
+}
+
+.hero-tight + .leaderboard-wrap .leaderboard-filters {
+  margin-bottom: 14px;
+}

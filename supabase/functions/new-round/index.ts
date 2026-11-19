@@ -23,6 +23,7 @@ const TARGET = 24;
 // limit per question. 0 = untimed (level 1). Keep in sync with
 // submit-answer and js/scoring.js LEVEL_TIME_SECONDS.
 const LEVEL_TIME_SECONDS: Record<number, number> = { 1: 0, 2: 60, 3: 45, 4: 30, 5: 20 };
+const TIME_GRACE_MS = 5000; // same allowance as submit-answer
 const DIGIT_MIN = 1;
 const DIGIT_MAX = 9;
 
@@ -146,6 +147,28 @@ Deno.serve(async req => {
     const unlockedLevel = progress?.player_level ?? 1;
     if (lvl > unlockedLevel) {
       return new Response(JSON.stringify({ error: 'level locked', unlockedLevel }), { status: 403, headers: cors });
+    }
+
+    // Time up = game over on timed levels. If this session's latest round
+    // was never solved and its time limit (plus grace) has passed, the
+    // session is finished — don't hand out another puzzle for it. (Skips
+    // and the 8-wrong-tries cutoff request the next round well within the
+    // limit, so they aren't caught by this.)
+    const limitMs = (LEVEL_TIME_SECONDS[lvl] ?? 0) * 1000;
+    if (limitMs > 0) {
+      const { data: lastRound } = await adminClient
+        .from('rounds')
+        .select('created_at, correct')
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (lastRound && lastRound.correct !== true) {
+        const ageMs = Date.now() - new Date(lastRound.created_at).getTime();
+        if (ageMs > limitMs + TIME_GRACE_MS) {
+          return new Response(JSON.stringify({ error: 'session over' }), { status: 403, headers: cors });
+        }
+      }
     }
 
     const puzzle = generatePuzzle(lvl);
