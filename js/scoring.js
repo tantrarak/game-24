@@ -21,7 +21,7 @@
 
   // Levels are stages: points earned AT level n (this season) unlock n+1.
   // Mirrors the player_levels view in supabase/schema.sql.
-  const LEVEL_REQ = { 1: 1000, 2: 3000, 3: 6000, 4: 10000 };
+  const LEVEL_REQ = { 1: 5000, 2: 15000, 3: 30000, 4: 50000 };
   const MAX_LEVEL = 5;
 
   function levelTimeLabel(level) {

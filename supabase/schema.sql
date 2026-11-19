@@ -288,7 +288,7 @@ create trigger stamp_score_season_trigger
 -- player_levels: the stage each player has unlocked this season.
 -- Levels work like stages: points earned AT a level (summed over this
 -- season's Challenge sessions played at that level) unlock the next one:
---   L1 -> L2: 1,000 · L2 -> L3: 3,000 · L3 -> L4: 6,000 · L4 -> L5: 10,000
+--   L1 -> L2: 5,000 · L2 -> L3: 15,000 · L3 -> L4: 30,000 · L4 -> L5: 50,000
 -- Farming a lower level never unlocks anything beyond the next stage.
 -- Keep these thresholds in sync with js/scoring.js LEVEL_REQ. The
 -- new-round Edge Function reads this view to refuse rounds above the
@@ -316,10 +316,10 @@ with per_level as (
 select
   user_id,
   case
-    when level1_points < 1000 then 1
-    when level2_points < 3000 then 2
-    when level3_points < 6000 then 3
-    when level4_points < 10000 then 4
+    when level1_points < 5000 then 1
+    when level2_points < 15000 then 2
+    when level3_points < 30000 then 3
+    when level4_points < 50000 then 4
     else 5
   end as player_level,
   level1_points,

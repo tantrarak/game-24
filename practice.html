@@ -19,7 +19,7 @@
 <link rel="stylesheet" href="css/game.css?v=4">
 <link rel="stylesheet" href="css/responsive.css?v=2">
 <link rel="stylesheet" href="css/fantasy.css?v=5">
-<link rel="stylesheet" href="css/jewel.css?v=5">
+<link rel="stylesheet" href="css/jewel.css?v=6">
 </head>
 <body data-fx="calm">
   <div id="auth-gate-overlay" class="auth-gate-overlay">
@@ -74,6 +74,7 @@
         <div id="expression-display" class="empty">สร้างสมการของคุณที่นี่...</div>
         <div id="feedback-container" class="feedback-container"></div>
       </div>
+      <div id="result-display" class="result-display hidden" aria-live="polite"></div>
       <p class="expr-hint">แตะตัวเลข/เครื่องหมายเพื่อลบตั้งแต่จุดนั้น • แตะ ( สีจางๆ เพื่อแทรกวงเล็บเปิดตรงนั้น</p>
 
       <div class="keypad">
@@ -123,11 +124,11 @@
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script src="js/supabaseClient.js"></script>
   <script src="js/puzzle.js?v=3"></script>
-  <script src="js/scoring.js?v=3"></script>
+  <script src="js/scoring.js?v=4"></script>
   <script src="js/ui.js"></script>
   <script src="js/auth.js?v=2"></script>
   <script src="js/sound.js"></script>
-  <script src="js/game.js?v=6"></script>
+  <script src="js/game.js?v=7"></script>
   <script>
     (async () => {
       const overlay = document.getElementById('auth-gate-overlay');

@@ -637,3 +637,89 @@ h2.shimmer-text {
   margin-right: 6px;
   vertical-align: 1px;
 }
+
+/* ---------- Answer feedback: solid, larger, on screen longer ---------- */
+.feedback-pop {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  padding: 10px 24px;
+  border: 2px solid #ffe29a;
+  box-shadow: 0 0 0 2px var(--gold-edge), 0 10px 24px rgba(0, 0, 0, 0.5);
+  animation: jewel-pop-hold 2.4s ease forwards;
+}
+
+.feedback-wrong {
+  color: #fff;
+  text-shadow: 0 2px 0 #6a0a2e;
+  background: linear-gradient(180deg, #ff6f9a, #c2185b);
+}
+
+.feedback-correct {
+  color: #fff;
+  text-shadow: 0 2px 0 #0a5a30;
+  background: linear-gradient(180deg, #3fe08a, #0f8a4a);
+}
+
+@keyframes jewel-pop-hold {
+  0% { opacity: 0; transform: translate(-50%, 10px) scale(0.8); }
+  8% { opacity: 1; transform: translate(-50%, -6px) scale(1.05); }
+  14% { transform: translate(-50%, -6px) scale(1); }
+  88% { opacity: 1; transform: translate(-50%, -6px) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -20px) scale(0.95); }
+}
+
+/* what the last wrong expression came to — stays until the next submit */
+.result-display {
+  margin: -8px 0 16px;
+  padding: 12px 16px;
+  text-align: center;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  background-image:
+    linear-gradient(180deg, rgba(120, 18, 60, 0.92), rgba(70, 10, 40, 0.92)),
+    var(--gold-rim);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  box-shadow: 0 0 0 1px var(--gold-edge), 0 8px 18px rgba(0, 0, 0, 0.4);
+}
+
+.rd-expr {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 500;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+
+.rd-value {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 0 10px;
+  border-radius: 10px;
+  font-weight: 600;
+  color: #3a2200;
+  background: linear-gradient(180deg, var(--gold-hi), var(--gold) 55%, var(--gold-lo));
+  box-shadow: 0 0 0 1px var(--gold-edge);
+}
+
+.rd-note {
+  margin-top: 4px;
+  font-size: 14px;
+  color: #ffd1de;
+}
+
+.result-display.rd-flash {
+  animation: pulse-kf 0.4s ease;
+}
+
+@media (max-width: 560px) {
+  .rd-expr { font-size: 20px; }
+}
+
+/* leaderboard level chip: larger so it reads at a glance */
+.rank-row .rank-level {
+  font-size: 14px;
+  padding: 2px 12px;
+  margin-right: 8px;
+}

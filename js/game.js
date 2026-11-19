@@ -48,6 +48,7 @@
         sqrtBtn: document.getElementById('op-sqrt'),
         factBtn: document.getElementById('op-fact'),
         levelProgress: document.getElementById('level-progress'),
+        resultDisplay: document.getElementById('result-display'),
         finalScore: document.getElementById('final-score'),
         finalCorrect: document.getElementById('final-correct'),
         finalWrong: document.getElementById('final-wrong'),
@@ -159,6 +160,37 @@
       this.el.levelBtns.forEach(b => b.classList.toggle('selected', parseInt(b.dataset.level, 10) === lv));
     }
 
+    // The expression as the player sees it, e.g. "√9 × (8 − 6)!".
+    expressionText() {
+      return this.tokens
+        .map(t => (t.type === 'num' ? String(t.value) : OP_SYMBOLS[t.value] || t.value))
+        .join(' ')
+        .replace(/√ /g, '√')
+        .replace(/ !/g, '!')
+        .replace(/\( /g, '(')
+        .replace(/ \)/g, ')');
+    }
+
+    // Wrong answers leave a box under the expression showing exactly what
+    // was submitted and what it came to — it stays until the next submit
+    // (or a correct answer), so there's time to read it.
+    showResult(exprText, value) {
+      const box = this.el.resultDisplay;
+      if (!box) return;
+      const shown = formatValue(value);
+      box.innerHTML = shown === null
+        ? `<div class="rd-expr">${UI24.escapeHtml(exprText)} = ?</div>
+           <div class="rd-note">คำนวณไม่ได้ — เช่น หารด้วย 0, √ ของจำนวนลบ หรือ ! ที่ไม่ใช่จำนวนเต็ม 0–10</div>`
+        : `<div class="rd-expr">${UI24.escapeHtml(exprText)} = <span class="rd-value">${shown}</span></div>
+           <div class="rd-note">ยังไม่ใช่ 24 ลองใหม่อีกครั้ง</div>`;
+      box.classList.remove('hidden');
+      UI24.flash(box, 'rd-flash', 600);
+    }
+
+    hideResult() {
+      if (this.el.resultDisplay) this.el.resultDisplay.classList.add('hidden');
+    }
+
     // Challenge only: which stages are open (server-computed from this
     // season's points per level), lock the rest, and show progress toward
     // the next unlock. new-round enforces the same rule server-side.
@@ -186,6 +218,7 @@
       this.correctCount = 0;
       this.wrongCount = 0;
       this.sessionStart = performance.now();
+      this.hideResult();
       this.serverRowId = null;
       this.currentRoundId = null;
 
@@ -499,6 +532,7 @@
 
     async submit() {
       if (this.el.submitBtn.disabled) return;
+      const exprText = this.expressionText();
 
       if (this.mode === 'practice') {
         let result = null;
@@ -508,8 +542,10 @@
           result = null;
         }
         if (result !== null && Puzzle24.isTwentyFour(result)) {
+          this.hideResult();
           this.handleCorrectLocal();
         } else {
+          this.showResult(exprText, result);
           UI24.popFeedback(this.el.feedbackContainer, wrongMessage(result), 'wrong');
           UI24.shake(this.el.expressionDisplay);
           this.registerWrong();
@@ -536,8 +572,12 @@
       }
 
       if (result.correct) {
+        this.hideResult();
         this.handleCorrectServer(result);
-      } else if (result.roundOver) {
+        return;
+      }
+      this.showResult(exprText, result.value);
+      if (result.roundOver) {
         // Tried enough times on this one puzzle (server-enforced cap,
         // stops brute-forcing every possible expression) — move on to a
         // fresh question instead of allowing further retries on this one.
