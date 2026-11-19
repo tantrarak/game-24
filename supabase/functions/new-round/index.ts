@@ -1,6 +1,6 @@
 // new-round — Supabase Edge Function
 // Generates a solvable 24-game puzzle server-side and returns ONLY the 4
-// numbers to the caller — never the solution. This is the fix for the
+// numbers (and the level's time limit) to the caller — never the solution. This is the fix for the
 // puzzle solver being shipped to (and callable from) the browser: the
 // solving algorithm now only ever runs here, server-side.
 //
@@ -19,13 +19,12 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const EPS = 1e-6;
 const TARGET = 24;
 
-const LEVELS: Record<number, { min: number; max: number; allowDuplicates: boolean; minRaw: number; maxRaw: number | null; timeSeconds: number }> = {
-  1: { min: 1, max: 6, allowDuplicates: false, minRaw: 10, maxRaw: null, timeSeconds: 45 },
-  2: { min: 1, max: 9, allowDuplicates: false, minRaw: 6, maxRaw: null, timeSeconds: 35 },
-  3: { min: 1, max: 10, allowDuplicates: true, minRaw: 1, maxRaw: null, timeSeconds: 25 },
-  4: { min: 2, max: 13, allowDuplicates: true, minRaw: 1, maxRaw: 20, timeSeconds: 18 },
-  5: { min: 3, max: 13, allowDuplicates: true, minRaw: 1, maxRaw: 8, timeSeconds: 12 }
-};
+// Every level draws single digits 1–9; levels differ ONLY by the time
+// limit per question. 0 = untimed (level 1). Keep in sync with
+// submit-answer and js/scoring.js LEVEL_TIME_SECONDS.
+const LEVEL_TIME_SECONDS: Record<number, number> = { 1: 0, 2: 60, 3: 45, 4: 30, 5: 20 };
+const DIGIT_MIN = 1;
+const DIGIT_MAX = 9;
 
 interface Item {
   val: number;
@@ -59,48 +58,27 @@ function search(items: Item[]): string[] {
   return results;
 }
 
-function solve(numbers: number[]) {
-  const items = numbers.map(n => ({ val: n, expr: String(n) }));
-  const results = search(items);
-  return { solvable: results.length > 0, count: results.length };
+function solvable(numbers: number[]): boolean {
+  return search(numbers.map(n => ({ val: n, expr: String(n) }))).length > 0;
 }
 
 function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function drawNumbers(level: number): number[] {
-  const cfg = LEVELS[level];
-  const nums: number[] = [];
-  for (let i = 0; i < 4; i++) {
-    let n: number;
-    do {
-      n = randomInt(cfg.min, cfg.max);
-    } while (!cfg.allowDuplicates && nums.includes(n));
-    nums.push(n);
-  }
-  return nums;
+function drawNumbers(): number[] {
+  return Array.from({ length: 4 }, () => randomInt(DIGIT_MIN, DIGIT_MAX));
 }
 
+// Only puzzles solvable with + − × ÷ alone are issued, so there is always
+// an answer; √ ! ^ are extra routes to 24, never required.
 function generatePuzzle(level: number) {
-  const cfg = LEVELS[level] || LEVELS[3];
-
+  const timeSeconds = LEVEL_TIME_SECONDS[level] ?? 0;
   for (let attempt = 0; attempt < 400; attempt++) {
-    const numbers = drawNumbers(level);
-    const result = solve(numbers);
-    if (!result.solvable) continue;
-    if (result.count < cfg.minRaw) continue;
-    if (cfg.maxRaw !== null && result.count > cfg.maxRaw) continue;
-    return { level, numbers, timeSeconds: cfg.timeSeconds };
+    const numbers = drawNumbers();
+    if (solvable(numbers)) return { level, numbers, timeSeconds };
   }
-
-  for (let attempt = 0; attempt < 400; attempt++) {
-    const numbers = drawNumbers(level);
-    const result = solve(numbers);
-    if (result.solvable) return { level, numbers, timeSeconds: cfg.timeSeconds };
-  }
-
-  return { level, numbers: [1, 2, 3, 4], timeSeconds: cfg.timeSeconds };
+  return { level, numbers: [1, 2, 3, 4], timeSeconds };
 }
 
 Deno.serve(async req => {
@@ -146,11 +124,28 @@ Deno.serve(async req => {
 
     const { data: session, error: sessionErr } = await adminClient
       .from('scores')
-      .select('id, user_id')
+      .select('id, user_id, level')
       .eq('id', sessionId)
       .single();
     if (sessionErr || !session || session.user_id !== user.id) {
       return new Response(JSON.stringify({ error: 'invalid session' }), { status: 403, headers: cors });
+    }
+    if (session.level !== lvl) {
+      return new Response(JSON.stringify({ error: 'level does not match session' }), { status: 400, headers: cors });
+    }
+
+    // Levels are stages: refuse rounds above the level this player has
+    // unlocked this season (see the player_levels view in schema.sql).
+    // This is the server-side gate — the locked buttons in the UI are
+    // just a convenience.
+    const { data: progress } = await adminClient
+      .from('player_levels')
+      .select('player_level')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    const unlockedLevel = progress?.player_level ?? 1;
+    if (lvl > unlockedLevel) {
+      return new Response(JSON.stringify({ error: 'level locked', unlockedLevel }), { status: 403, headers: cors });
     }
 
     const puzzle = generatePuzzle(lvl);

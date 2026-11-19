@@ -193,3 +193,17 @@ kbd {
     grid-template-columns: 1fr;
   }
 }
+
+/* 4-column level table: level · time · unlock rule · multiplier */
+.guide-level-row.guide-level-row-4 {
+  grid-template-columns: 1.1fr 1fr 1.6fr 60px;
+  gap: 8px;
+}
+
+@media (max-width: 560px) {
+  .guide-level-row.guide-level-row-4 {
+    grid-template-columns: 1fr 0.9fr 1.4fr 44px;
+    font-size: 11px;
+    padding: 8px 10px;
+  }
+}

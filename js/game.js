@@ -1,6 +1,20 @@
 /* game.js — Game24 controller, shared by practice.html and challenge.html */
 (function (global) {
-  const OP_SYMBOLS = { '+': '+', '-': '−', '*': '×', '/': '÷' };
+  const OP_SYMBOLS = { '+': '+', '-': '−', '*': '×', '/': '÷', '^': '^', sqrt: '√', '!': '!' };
+
+  // What a wrong expression came to, for the "ได้ X ไม่ใช่ 24" message:
+  // whole numbers as-is, fractions to 3 decimals; null if not computable.
+  function formatValue(v) {
+    if (typeof v !== 'number' || !Number.isFinite(v)) return null;
+    const r = Math.round(v);
+    if (Math.abs(v - r) < 1e-9) return r.toLocaleString();
+    return String(Math.round(v * 1000) / 1000);
+  }
+
+  function wrongMessage(value) {
+    const shown = formatValue(value);
+    return shown === null ? '❌ คำนวณไม่ได้ (เช่น หารด้วย 0)' : `❌ ได้ ${shown} ไม่ใช่ 24`;
+  }
 
   class Game24 {
     constructor(opts) {
@@ -31,6 +45,9 @@
         opBtns: Array.from(document.querySelectorAll('.op-symbol')),
         openParenBtn: document.getElementById('op-open'),
         closeParenBtn: document.getElementById('op-close'),
+        sqrtBtn: document.getElementById('op-sqrt'),
+        factBtn: document.getElementById('op-fact'),
+        levelProgress: document.getElementById('level-progress'),
         finalScore: document.getElementById('final-score'),
         finalCorrect: document.getElementById('final-correct'),
         finalWrong: document.getElementById('final-wrong'),
@@ -42,7 +59,10 @@
         soundToggleBtn: document.getElementById('sound-toggle-btn')
       };
 
-      this.level = 3;
+      // Challenge picks the player's highest unlocked level once it's
+      // loaded; Practice has no levels (untimed, nothing saved).
+      this.level = 1;
+      this.unlockedLevel = 1;
       this.cards = [];
       this.tokens = [];
       this.state = 'operand'; // 'operand' | 'operator'
@@ -65,12 +85,13 @@
     init() {
       this.el.levelBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-          this.level = parseInt(btn.dataset.level, 10);
-          this.el.levelBtns.forEach(b => b.classList.toggle('selected', b === btn));
+          const lv = parseInt(btn.dataset.level, 10);
+          if (lv > this.unlockedLevel) return;
+          this.selectLevel(lv);
         });
       });
-      const defaultBtn = this.el.levelBtns.find(b => parseInt(b.dataset.level, 10) === this.level);
-      if (defaultBtn) defaultBtn.classList.add('selected');
+      this.selectLevel(this.level);
+      if (this.mode === 'challenge') this.loadLevelProgress(true);
 
       this.el.startBtn.addEventListener('click', () => this.startSession());
       this.el.opBtns.forEach(btn => {
@@ -78,6 +99,8 @@
       });
       if (this.el.openParenBtn) this.el.openParenBtn.addEventListener('click', () => this.clickParen('('));
       if (this.el.closeParenBtn) this.el.closeParenBtn.addEventListener('click', () => this.clickParen(')'));
+      if (this.el.sqrtBtn) this.el.sqrtBtn.addEventListener('click', () => this.clickSqrt());
+      if (this.el.factBtn) this.el.factBtn.addEventListener('click', () => this.clickFactorial());
       this.el.backBtn.addEventListener('click', () => this.backspace());
       this.el.clearBtn.addEventListener('click', () => this.clearAll());
       this.el.submitBtn.addEventListener('click', () => this.submit());
@@ -110,9 +133,13 @@
         const val = parseInt(e.key, 10) === 0 ? 10 : parseInt(e.key, 10);
         const idx = this.cards.findIndex(c => !c.used && c.value === val);
         if (idx !== -1) this.clickNumber(idx);
-      } else if (['+', '-', '*', 'x', 'X', '/'].includes(e.key)) {
+      } else if (['+', '-', '*', 'x', 'X', '/', '^'].includes(e.key)) {
         const op = e.key === 'x' || e.key === 'X' ? '*' : e.key;
         this.clickOperator(op);
+      } else if (e.key === '!') {
+        this.clickFactorial();
+      } else if (e.key === 'r' || e.key === 'R') {
+        this.clickSqrt();
       } else if (e.key === '(') {
         this.clickParen('(');
       } else if (e.key === ')') {
@@ -125,6 +152,31 @@
       } else if (e.key === 'Escape') {
         this.clearAll();
       }
+    }
+
+    selectLevel(lv) {
+      this.level = lv;
+      this.el.levelBtns.forEach(b => b.classList.toggle('selected', parseInt(b.dataset.level, 10) === lv));
+    }
+
+    // Challenge only: which stages are open (server-computed from this
+    // season's points per level), lock the rest, and show progress toward
+    // the next unlock. new-round enforces the same rule server-side.
+    async loadLevelProgress(selectHighest) {
+      const user = typeof Auth24 !== 'undefined' ? await Auth24.getCurrentUser() : null;
+      const info = await Scoring24.fetchPlayerLevel(user && user.id);
+      this.unlockedLevel = info.level;
+      this.el.levelBtns.forEach(btn => {
+        const lv = parseInt(btn.dataset.level, 10);
+        const locked = lv > info.level;
+        btn.classList.toggle('locked', locked);
+        btn.disabled = locked;
+        btn.title = locked
+          ? `ต้องได้ ${Scoring24.LEVEL_REQ[lv - 1].toLocaleString()} คะแนนในเลเวล ${lv - 1} ก่อน`
+          : '';
+      });
+      if (selectHighest || this.level > info.level) this.selectLevel(info.level);
+      Scoring24.renderLevelProgress(this.el.levelProgress, info);
     }
 
     async startSession() {
@@ -165,10 +217,7 @@
       this.state = 'operand';
       this.parenDepth = 0;
       if (this.el.hintDisplay) this.el.hintDisplay.classList.add('hidden');
-      if (this.el.levelLabel) {
-        const mult = Scoring24.LEVEL_MULTIPLIER[this.level] || 1;
-        this.el.levelLabel.textContent = `LEVEL ${this.level} · ${Scoring24.LEVEL_NAMES[this.level]} · ×${mult} คะแนน`;
-      }
+      if (this.el.levelLabel) this.el.levelLabel.textContent = 'PRACTICE · ไม่จับเวลา';
       this.renderCards();
       this.renderExpression();
       this.updateButtonStates();
@@ -189,6 +238,13 @@
       this.updateButtonStates();
 
       const result = await this.callEdgeFunction('new-round', { level: this.level, sessionId: this.serverRowId });
+      if (result && result.error === 'level locked') {
+        alert(`เลเวล ${this.level} ยังล็อกอยู่ ต้องเก็บคะแนนในเลเวลก่อนหน้าให้ครบก่อน`);
+        this.running = false;
+        this.stopQuestionTimer();
+        this.reset();
+        return;
+      }
       if (!result || result.error) {
         console.error('[GAME24] nextRound failed', result && result.error);
         UI24.popFeedback(this.el.feedbackContainer, 'โหลดโจทย์ไม่สำเร็จ ลองกดใหม่', 'wrong');
@@ -205,7 +261,15 @@
       this.renderCards();
       this.renderExpression();
       this.updateButtonStates();
-      this.resetQuestionTimer(result.timeSeconds * 1000);
+      // timeSeconds 0 = untimed level (level 1): no countdown, no time-up;
+      // the session only ends via "จบเกมตอนนี้".
+      if (result.timeSeconds > 0) {
+        this.resetQuestionTimer(result.timeSeconds * 1000);
+      } else {
+        this.stopQuestionTimer();
+        this.running = true;
+        if (this.el.timerWrap) this.el.timerWrap.classList.add('hidden');
+      }
     }
 
     async callEdgeFunction(name, body) {
@@ -276,6 +340,7 @@
         const span = document.createElement('span');
         span.className = 'expr-token';
         span.textContent = t.type === 'num' ? t.value : OP_SYMBOLS[t.value] || t.value;
+        if (t.type === 'func' || t.type === 'post') span.classList.add('expr-unary');
         span.addEventListener('click', () => this.truncateAt(idx));
         displayEl.appendChild(span);
         displayEl.appendChild(document.createTextNode(' '));
@@ -290,7 +355,7 @@
     canOpenParenAt(idx) {
       if (idx === 0) return true;
       const prev = this.tokens[idx - 1];
-      return prev.type === 'op' || (prev.type === 'paren' && prev.value === '(');
+      return prev.type === 'op' || prev.type === 'func' || (prev.type === 'paren' && prev.value === '(');
     }
 
     // Splicing an extra "(" in anywhere only ever adds one more unclosed
@@ -311,6 +376,9 @@
         btn.disabled = this.state !== 'operator';
       });
       if (this.el.openParenBtn) this.el.openParenBtn.disabled = this.state !== 'operand';
+      // √ goes in front of a number/group (like "("); ! goes after one (like ")")
+      if (this.el.sqrtBtn) this.el.sqrtBtn.disabled = this.state !== 'operand';
+      if (this.el.factBtn) this.el.factBtn.disabled = this.state !== 'operator';
       if (this.el.closeParenBtn) {
         const last = this.tokens[this.tokens.length - 1];
         this.el.closeParenBtn.disabled =
@@ -342,6 +410,24 @@
       this.updateButtonStates();
     }
 
+    // √ is a prefix: it applies to the number or (group) typed next, so the
+    // player is still expected to type an operand afterwards.
+    clickSqrt() {
+      if (this.locked || this.state !== 'operand') return;
+      this.tokens.push({ type: 'func', value: 'sqrt' });
+      this.renderExpression();
+      this.updateButtonStates();
+    }
+
+    // ! is a postfix: it applies to the number or (group) just finished,
+    // so an operator (or another !) can still follow.
+    clickFactorial() {
+      if (this.locked || this.state !== 'operator') return;
+      this.tokens.push({ type: 'post', value: '!' });
+      this.renderExpression();
+      this.updateButtonStates();
+    }
+
     clickParen(paren) {
       if (paren === '(') {
         if (this.state !== 'operand') return;
@@ -369,6 +455,10 @@
         if (card) card.used = false;
         this.state = 'operand';
       } else if (last.type === 'op') {
+        this.state = 'operator';
+      } else if (last.type === 'func') {
+        this.state = 'operand';
+      } else if (last.type === 'post') {
         this.state = 'operator';
       } else if (last.value === '(') {
         this.parenDepth--;
@@ -411,19 +501,16 @@
       if (this.el.submitBtn.disabled) return;
 
       if (this.mode === 'practice') {
-        let result;
+        let result = null;
         try {
           result = Puzzle24.evaluateTokens(this.tokens);
         } catch (err) {
-          UI24.popFeedback(this.el.feedbackContainer, '❌ หารด้วย 0 ไม่ได้', 'wrong');
-          UI24.shake(this.el.expressionDisplay);
-          this.registerWrong();
-          return;
+          result = null;
         }
-        if (Puzzle24.isTwentyFour(result)) {
+        if (result !== null && Puzzle24.isTwentyFour(result)) {
           this.handleCorrectLocal();
         } else {
-          UI24.popFeedback(this.el.feedbackContainer, '❌ TRY AGAIN', 'wrong');
+          UI24.popFeedback(this.el.feedbackContainer, wrongMessage(result), 'wrong');
           UI24.shake(this.el.expressionDisplay);
           this.registerWrong();
         }
@@ -454,11 +541,11 @@
         // Tried enough times on this one puzzle (server-enforced cap,
         // stops brute-forcing every possible expression) — move on to a
         // fresh question instead of allowing further retries on this one.
-        UI24.popFeedback(this.el.feedbackContainer, '❌ ลองครบจำนวนแล้ว ไปข้อถัดไป', 'wrong');
+        UI24.popFeedback(this.el.feedbackContainer, `${wrongMessage(result.value)} · ลองครบแล้ว ไปข้อถัดไป`, 'wrong');
         UI24.shake(this.el.expressionDisplay);
         this.registerWrong({ advance: true });
       } else {
-        UI24.popFeedback(this.el.feedbackContainer, '❌ TRY AGAIN', 'wrong');
+        UI24.popFeedback(this.el.feedbackContainer, wrongMessage(result.value), 'wrong');
         UI24.shake(this.el.expressionDisplay);
         this.registerWrong();
       }
@@ -516,7 +603,12 @@
       this.bestStreak = Math.max(this.bestStreak, this.streak);
       this.score = result.newScore;
 
-      UI24.popFeedback(this.el.feedbackContainer, '🎉 CORRECT!', 'correct');
+      if (result.unlockedLevel > this.unlockedLevel) {
+        this.unlockedLevel = result.unlockedLevel;
+        UI24.popFeedback(this.el.feedbackContainer, `🔓 ปลดล็อกเลเวล ${result.unlockedLevel} แล้ว!`, 'correct');
+      } else {
+        UI24.popFeedback(this.el.feedbackContainer, '🎉 CORRECT!', 'correct');
+      }
       UI24.floatScore(this.el.feedbackContainer, result.gained);
       UI24.pulse(this.el.scoreValue);
       if (this.streak > 1) UI24.pulse(this.el.streakValue);
@@ -558,6 +650,7 @@
 
     resetQuestionTimer(ms) {
       this.stopQuestionTimer();
+      if (this.el.timerWrap) this.el.timerWrap.classList.remove('hidden');
       this.remainingMs = ms;
       this.totalMs = ms;
       this.running = true;
@@ -667,6 +760,8 @@
       this.el.gamePanel.classList.add('hidden');
       this.el.setupPanel.classList.remove('hidden');
       if (this.el.bestValue) this.el.bestValue.textContent = Scoring24.getBest(this.mode);
+      // points from the session just played may have opened a new stage
+      if (this.mode === 'challenge') this.loadLevelProgress(false);
     }
   }
 

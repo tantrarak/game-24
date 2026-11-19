@@ -285,9 +285,57 @@ create trigger stamp_score_season_trigger
   for each row execute procedure public.stamp_score_season();
 
 -- ============================================================
+-- player_levels: the stage each player has unlocked this season.
+-- Levels work like stages: points earned AT a level (summed over this
+-- season's Challenge sessions played at that level) unlock the next one:
+--   L1 -> L2: 1,000 · L2 -> L3: 3,000 · L3 -> L4: 6,000 · L4 -> L5: 10,000
+-- Farming a lower level never unlocks anything beyond the next stage.
+-- Keep these thresholds in sync with js/scoring.js LEVEL_REQ. The
+-- new-round Edge Function reads this view to refuse rounds above the
+-- unlocked level. Season-scoped (like the leaderboard), so starting a
+-- new season puts everyone back on level 1.
+-- No security_invoker, same as the views below, so leaderboard_view can
+-- read it for anonymous visitors; anon gets no direct access to it.
+-- ============================================================
+drop view if exists public.leaderboard_view; -- depends on player_levels
+drop view if exists public.player_levels;
+create view public.player_levels as
+with per_level as (
+  select
+    s.user_id,
+    coalesce(sum(s.score) filter (where s.level = 1), 0) as level1_points,
+    coalesce(sum(s.score) filter (where s.level = 2), 0) as level2_points,
+    coalesce(sum(s.score) filter (where s.level = 3), 0) as level3_points,
+    coalesce(sum(s.score) filter (where s.level = 4), 0) as level4_points,
+    coalesce(sum(s.score) filter (where s.level = 5), 0) as level5_points
+  from public.scores s
+  cross join public.app_settings st
+  where s.season = st.current_season
+  group by s.user_id
+)
+select
+  user_id,
+  case
+    when level1_points < 1000 then 1
+    when level2_points < 3000 then 2
+    when level3_points < 6000 then 3
+    when level4_points < 10000 then 4
+    else 5
+  end as player_level,
+  level1_points,
+  level2_points,
+  level3_points,
+  level4_points,
+  level5_points
+from per_level;
+
+revoke all on public.player_levels from anon;
+
+-- ============================================================
 -- leaderboard_view: TOTAL accumulated score (sum of every Challenge
--- round this season, including in-progress ones) per non-banned player.
--- Ties are broken by who started accumulating that total earlier —
+-- round this season, including in-progress ones) per non-banned player,
+-- plus their unlocked level. The app ranks by level first, then total
+-- score. Remaining ties are broken by who started accumulating earlier —
 -- without a secondary sort, PostgreSQL doesn't guarantee stable order
 -- among tied sums, so rank could shuffle between page loads.
 -- ============================================================
@@ -309,10 +357,12 @@ select
   p.grade,
   p.classroom,
   sum(s.score) as total_score,
-  min(s.created_at) as first_played_at
+  min(s.created_at) as first_played_at,
+  coalesce(max(pl.player_level), 1) as player_level
 from public.scores s
 join public.profiles p on p.id = s.user_id
 cross join public.app_settings st
+left join public.player_levels pl on pl.user_id = s.user_id
 where p.is_banned = false
   and s.season = st.current_season
 group by p.id, p.name, p.school, p.grade, p.classroom;

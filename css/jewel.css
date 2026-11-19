@@ -530,3 +530,110 @@ h2.shimmer-text {
 .mode-card:hover {
   border-color: transparent;
 }
+
+/* ---------- Level stages (challenge setup) ---------- */
+.level-btn .lv-time {
+  display: block;
+  font-size: 10px;
+  margin-top: 3px;
+  color: #cfe9ff;
+}
+
+.level-btn.locked {
+  cursor: not-allowed;
+  filter: grayscale(0.85) brightness(0.65);
+  transform: none;
+}
+
+.level-btn.locked .lv-num::after {
+  content: ' 🔒';
+  font-size: 13px;
+}
+
+.level-progress {
+  margin: -8px auto 22px;
+  max-width: 520px;
+  font-size: 13px;
+  color: #cfd2f2;
+}
+
+.level-progress:empty {
+  display: none;
+}
+
+.lp-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  font-family: var(--font-display);
+}
+
+.lp-level,
+.rank-level {
+  display: inline-block;
+  padding: 1px 9px;
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 12px;
+  color: #3a2200;
+  background: linear-gradient(180deg, var(--gold-hi), var(--gold) 55%, var(--gold-lo));
+  box-shadow: 0 0 0 1px var(--gold-edge);
+}
+
+.lp-bar {
+  height: 12px;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  overflow: hidden;
+  background-image: linear-gradient(180deg, #08061a, #1c1640), var(--gold-rim);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  box-shadow: 0 0 0 1px var(--gold-edge);
+}
+
+.lp-fill {
+  height: 100%;
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.1) 45%, rgba(255, 255, 255, 0) 50%),
+    linear-gradient(90deg, #3fe08a, #0f8a4a);
+  box-shadow: 0 0 8px rgba(63, 224, 138, 0.6);
+}
+
+.lp-note {
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.lp-note strong {
+  color: var(--gold-hi);
+}
+
+/* ---------- Keypad: √ ! keys and a wide Clear ---------- */
+.op-btn.op-extra {
+  text-shadow: 0 2px 0 #0b4a3a;
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.08) 46%, rgba(255, 255, 255, 0) 48%),
+    linear-gradient(180deg, #3fd6b0, #138a6e),
+    var(--gold-rim);
+}
+
+.op-btn.op-wide {
+  grid-column: span 2;
+}
+
+.op-btn sup {
+  font-size: 0.6em;
+}
+
+.expr-token.expr-unary {
+  color: #7fffd9;
+}
+
+/* ---------- Leaderboard: level chip next to the name ---------- */
+.rank-level {
+  margin-right: 6px;
+  vertical-align: 1px;
+}

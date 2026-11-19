@@ -1,20 +1,27 @@
-/* puzzle.js — 24-solver, puzzle generation, expression evaluation */
+/* puzzle.js — 24-solver, puzzle generation, expression evaluation.
+   Used by Practice only (Challenge puzzles come from the new-round Edge
+   Function). The evaluator below is duplicated in
+   supabase/functions/submit-answer — keep the two in sync. */
 (function (global) {
   const EPS = 1e-6;
   const TARGET = 24;
 
-  const LEVELS = {
-    1: { name: 'Beginner', min: 1, max: 6, allowDuplicates: false, minRaw: 10, maxRaw: null, timeSeconds: 45 },
-    2: { name: 'Easy', min: 1, max: 9, allowDuplicates: false, minRaw: 6, maxRaw: null, timeSeconds: 35 },
-    3: { name: 'Medium', min: 1, max: 10, allowDuplicates: true, minRaw: 1, maxRaw: null, timeSeconds: 25 },
-    4: { name: 'Hard', min: 2, max: 13, allowDuplicates: true, minRaw: 1, maxRaw: 20, timeSeconds: 18 },
-    5: { name: 'Expert', min: 3, max: 13, allowDuplicates: true, minRaw: 1, maxRaw: 8, timeSeconds: 12 }
-  };
+  // Every level draws single digits 1–9; levels differ only by the time
+  // limit per question (see Scoring24.LEVEL_TIME_SECONDS).
+  const DIGIT_MIN = 1;
+  const DIGIT_MAX = 9;
+
+  // Guards for the extra operators so an answer can't blow up into
+  // huge/NaN values: n! only for whole numbers 0–10, and any
+  // intermediate result beyond ±1e9 is rejected.
+  const MAX_FACTORIAL = 10;
+  const MAX_ABS = 1e9;
 
   // Exhaustive search over all ways to combine 4 numbers with + - * / and
   // parentheses (implicit via recursive pairwise reduction). Returns every
-  // expression string whose value is ~24. Search space is tiny (4 numbers)
-  // so no memoization/cap is needed.
+  // expression string whose value is ~24. Puzzles are only issued if they
+  // are solvable with these four basic operators — √ ! ^ are extra ways
+  // to reach 24, never required.
   function search(items) {
     if (items.length === 1) {
       return Math.abs(items[0].val - TARGET) < EPS ? [items[0].expr] : [];
@@ -52,114 +59,128 @@
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
-  function drawNumbers(level) {
-    const cfg = LEVELS[level];
-    const nums = [];
-    for (let i = 0; i < 4; i++) {
-      let n;
-      do {
-        n = randomInt(cfg.min, cfg.max);
-      } while (!cfg.allowDuplicates && nums.includes(n));
-      nums.push(n);
-    }
-    return nums;
+  function drawNumbers() {
+    return Array.from({ length: 4 }, () => randomInt(DIGIT_MIN, DIGIT_MAX));
   }
 
   function generatePuzzle(level) {
-    const cfg = LEVELS[level] || LEVELS[3];
-    const MAX_ATTEMPTS = 400;
-
-    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-      const numbers = drawNumbers(level);
-      const result = solve(numbers);
-      if (!result.solvable) continue;
-      if (result.count < cfg.minRaw) continue;
-      if (cfg.maxRaw !== null && result.count > cfg.maxRaw) continue;
-      return {
-        level,
-        numbers,
-        solutionExample: result.examples[0],
-        timeSeconds: cfg.timeSeconds
-      };
-    }
-
-    // Relaxed fallback: accept anything solvable at all.
     for (let attempt = 0; attempt < 400; attempt++) {
-      const numbers = drawNumbers(level);
+      const numbers = drawNumbers();
       const result = solve(numbers);
       if (result.solvable) {
-        return {
-          level,
-          numbers,
-          solutionExample: result.examples[0],
-          timeSeconds: cfg.timeSeconds
-        };
+        return { level, numbers, solutionExample: result.examples[0] };
       }
     }
-
     // Guaranteed-solvable last resort: (1+2+3)*4 = 24.
-    return {
-      level,
-      numbers: [1, 2, 3, 4],
-      solutionExample: '((1+2+3)*4)',
-      timeSeconds: cfg.timeSeconds
-    };
+    return { level, numbers: [1, 2, 3, 4], solutionExample: '((1+2+3)*4)' };
   }
 
-  // Evaluate a token list built by the UI's own grammar rules
-  // (tokens: {type:'num', value:Number} | {type:'op', value:'+'|'-'|'*'|'/'} | {type:'paren', value:'('|')'})
+  // Evaluates a token list built by the game UI:
+  //   {type:'num', value:Number}
+  //   {type:'op', value:'+'|'-'|'*'|'/'|'^'}   binary operators
+  //   {type:'paren', value:'('|')'}
+  //   {type:'func', value:'sqrt'}              prefix √
+  //   {type:'post', value:'!'}                 postfix factorial
+  // Grammar (recursive descent, standard precedence, ^ right-associative):
+  //   expr    := term (('+'|'-') term)*
+  //   term    := power (('*'|'/') power)*
+  //   power   := unary ('^' power)?
+  //   unary   := '√' unary | postfix
+  //   postfix := primary '!'*
+  //   primary := num | '(' expr ')'
+  // Throws on anything malformed or not computable (÷0, √ of a negative,
+  // n! of a non-whole/negative/too-large n, overflow).
   function evaluateTokens(tokens) {
-    const prec = { '+': 1, '-': 1, '*': 2, '/': 2 };
-    const output = [];
-    const opStack = [];
+    if (!Array.isArray(tokens) || tokens.length === 0) throw new Error('INVALID');
+    let pos = 0;
+    const peek = () => tokens[pos];
+    const isOp = (t, ...ops) => t && t.type === 'op' && ops.includes(t.value);
+    const fail = code => {
+      throw new Error(code || 'INVALID');
+    };
+    const check = v => {
+      if (!Number.isFinite(v) || Math.abs(v) > MAX_ABS) fail('OUT_OF_RANGE');
+      return v;
+    };
 
-    for (const t of tokens) {
-      if (t.type === 'num') {
-        output.push(t);
-      } else if (t.type === 'op') {
-        while (
-          opStack.length &&
-          opStack[opStack.length - 1].type === 'op' &&
-          prec[opStack[opStack.length - 1].value] >= prec[t.value]
-        ) {
-          output.push(opStack.pop());
-        }
-        opStack.push(t);
-      } else if (t.value === '(') {
-        opStack.push(t);
-      } else if (t.value === ')') {
-        while (opStack.length && opStack[opStack.length - 1].value !== '(') {
-          output.push(opStack.pop());
-        }
-        opStack.pop(); // discard '('
+    function parseExpr() {
+      let v = parseTerm();
+      while (isOp(peek(), '+', '-')) {
+        const op = tokens[pos++].value;
+        const r = parseTerm();
+        v = check(op === '+' ? v + r : v - r);
       }
+      return v;
     }
-    while (opStack.length) output.push(opStack.pop());
 
-    const stack = [];
-    for (const t of output) {
-      if (t.type === 'num') {
-        stack.push(t.value);
-        continue;
+    function parseTerm() {
+      let v = parsePower();
+      while (isOp(peek(), '*', '/')) {
+        const op = tokens[pos++].value;
+        const r = parsePower();
+        if (op === '/') {
+          if (Math.abs(r) < EPS) fail('DIV_ZERO');
+          v = check(v / r);
+        } else {
+          v = check(v * r);
+        }
       }
-      const b = stack.pop();
-      const a = stack.pop();
-      switch (t.value) {
-        case '+': stack.push(a + b); break;
-        case '-': stack.push(a - b); break;
-        case '*': stack.push(a * b); break;
-        case '/':
-          if (Math.abs(b) < EPS) throw new Error('DIV_ZERO');
-          stack.push(a / b);
-          break;
-      }
+      return v;
     }
-    return stack[0];
+
+    function parsePower() {
+      const base = parseUnary();
+      if (!isOp(peek(), '^')) return base;
+      pos++;
+      const exp = parsePower();
+      if (Math.abs(base) < EPS && exp < 0) fail('DIV_ZERO');
+      return check(Math.pow(base, exp));
+    }
+
+    function parseUnary() {
+      const t = peek();
+      if (t && t.type === 'func' && t.value === 'sqrt') {
+        pos++;
+        const v = parseUnary();
+        if (v < -EPS) fail('SQRT_NEGATIVE');
+        return Math.sqrt(Math.max(0, v));
+      }
+      return parsePostfix();
+    }
+
+    function parsePostfix() {
+      let v = parsePrimary();
+      while (peek() && peek().type === 'post' && peek().value === '!') {
+        pos++;
+        const n = Math.round(v);
+        if (Math.abs(v - n) > EPS || n < 0 || n > MAX_FACTORIAL) fail('FACTORIAL');
+        let f = 1;
+        for (let i = 2; i <= n; i++) f *= i;
+        v = f;
+      }
+      return v;
+    }
+
+    function parsePrimary() {
+      const t = tokens[pos++];
+      if (t && t.type === 'num' && Number.isInteger(t.value)) return t.value;
+      if (t && t.type === 'paren' && t.value === '(') {
+        const v = parseExpr();
+        const close = tokens[pos++];
+        if (!close || close.type !== 'paren' || close.value !== ')') fail();
+        return v;
+      }
+      return fail();
+    }
+
+    const value = parseExpr();
+    if (pos !== tokens.length) fail();
+    return value;
   }
 
   function isTwentyFour(value) {
     return Math.abs(value - TARGET) < EPS;
   }
 
-  global.Puzzle24 = { LEVELS, EPS, TARGET, solve, generatePuzzle, evaluateTokens, isTwentyFour };
+  global.Puzzle24 = { EPS, TARGET, solve, generatePuzzle, evaluateTokens, isTwentyFour };
 })(window);

@@ -13,72 +13,120 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const EPS = 1e-6;
 const TARGET = 24;
 
-const LEVEL_TIME_SECONDS: Record<number, number> = { 1: 45, 2: 35, 3: 25, 4: 18, 5: 12 };
+// 0 = untimed (level 1, no time bonus). Keep in sync with new-round and
+// js/scoring.js LEVEL_TIME_SECONDS.
+const LEVEL_TIME_SECONDS: Record<number, number> = { 1: 0, 2: 60, 3: 45, 4: 30, 5: 20 };
 const LEVEL_MULTIPLIER: Record<number, number> = { 1: 1, 2: 1.2, 3: 1.5, 4: 2, 5: 3 };
 const BASE_SCORE = 100;
 const MAX_TIME_BONUS = 50;
 const STREAK_STEP = 10;
 const STREAK_CAP = 10;
 const MAX_WRONG_ATTEMPTS = 8;
+const MAX_TOKENS = 40;
+const MAX_FACTORIAL = 10;
+const MAX_ABS = 1e9;
 
 interface Token {
-  type: 'num' | 'op' | 'paren';
+  type: 'num' | 'op' | 'paren' | 'func' | 'post';
   value: number | string;
 }
 
+// Same evaluator as js/puzzle.js (Practice) — keep the two in sync.
+//   expr    := term (('+'|'-') term)*
+//   term    := power (('*'|'/') power)*
+//   power   := unary ('^' power)?          (^ is right-associative)
+//   unary   := '√' unary | postfix
+//   postfix := primary '!'*
+//   primary := num | '(' expr ')'
+// Throws on anything malformed or not computable (÷0, √ of a negative,
+// n! of a non-whole/negative/>10 n, results beyond ±1e9). The token list
+// comes from the client, so every token is validated here.
 function evaluateTokens(tokens: Token[]): number {
-  const prec: Record<string, number> = { '+': 1, '-': 1, '*': 2, '/': 2 };
-  const output: Token[] = [];
-  const opStack: Token[] = [];
+  if (!Array.isArray(tokens) || tokens.length === 0 || tokens.length > MAX_TOKENS) throw new Error('INVALID');
+  let pos = 0;
+  const peek = () => tokens[pos];
+  const isOp = (t: Token | undefined, ...ops: string[]) => !!t && t.type === 'op' && ops.includes(t.value as string);
+  const fail = (code = 'INVALID'): never => {
+    throw new Error(code);
+  };
+  const check = (v: number) => {
+    if (!Number.isFinite(v) || Math.abs(v) > MAX_ABS) fail('OUT_OF_RANGE');
+    return v;
+  };
 
-  for (const t of tokens) {
-    if (t.type === 'num') {
-      output.push(t);
-    } else if (t.type === 'op') {
-      while (
-        opStack.length &&
-        opStack[opStack.length - 1].type === 'op' &&
-        prec[opStack[opStack.length - 1].value as string] >= prec[t.value as string]
-      ) {
-        output.push(opStack.pop()!);
-      }
-      opStack.push(t);
-    } else if (t.value === '(') {
-      opStack.push(t);
-    } else if (t.value === ')') {
-      while (opStack.length && opStack[opStack.length - 1].value !== '(') {
-        output.push(opStack.pop()!);
-      }
-      opStack.pop();
+  function parseExpr(): number {
+    let v = parseTerm();
+    while (isOp(peek(), '+', '-')) {
+      const op = tokens[pos++].value;
+      const r = parseTerm();
+      v = check(op === '+' ? v + r : v - r);
     }
+    return v;
   }
-  while (opStack.length) output.push(opStack.pop()!);
 
-  const stack: number[] = [];
-  for (const t of output) {
-    if (t.type === 'num') {
-      stack.push(t.value as number);
-      continue;
+  function parseTerm(): number {
+    let v = parsePower();
+    while (isOp(peek(), '*', '/')) {
+      const op = tokens[pos++].value;
+      const r = parsePower();
+      if (op === '/') {
+        if (Math.abs(r) < EPS) fail('DIV_ZERO');
+        v = check(v / r);
+      } else {
+        v = check(v * r);
+      }
     }
-    const b = stack.pop() as number;
-    const a = stack.pop() as number;
-    switch (t.value) {
-      case '+':
-        stack.push(a + b);
-        break;
-      case '-':
-        stack.push(a - b);
-        break;
-      case '*':
-        stack.push(a * b);
-        break;
-      case '/':
-        if (Math.abs(b) < EPS) throw new Error('DIV_ZERO');
-        stack.push(a / b);
-        break;
-    }
+    return v;
   }
-  return stack[0];
+
+  function parsePower(): number {
+    const base = parseUnary();
+    if (!isOp(peek(), '^')) return base;
+    pos++;
+    const exp = parsePower();
+    if (Math.abs(base) < EPS && exp < 0) fail('DIV_ZERO');
+    return check(Math.pow(base, exp));
+  }
+
+  function parseUnary(): number {
+    const t = peek();
+    if (t && t.type === 'func' && t.value === 'sqrt') {
+      pos++;
+      const v = parseUnary();
+      if (v < -EPS) fail('SQRT_NEGATIVE');
+      return Math.sqrt(Math.max(0, v));
+    }
+    return parsePostfix();
+  }
+
+  function parsePostfix(): number {
+    let v = parsePrimary();
+    while (peek() && peek().type === 'post' && peek().value === '!') {
+      pos++;
+      const n = Math.round(v);
+      if (Math.abs(v - n) > EPS || n < 0 || n > MAX_FACTORIAL) fail('FACTORIAL');
+      let f = 1;
+      for (let i = 2; i <= n; i++) f *= i;
+      v = f;
+    }
+    return v;
+  }
+
+  function parsePrimary(): number {
+    const t = tokens[pos++];
+    if (t && t.type === 'num' && Number.isInteger(t.value)) return t.value as number;
+    if (t && t.type === 'paren' && t.value === '(') {
+      const v = parseExpr();
+      const close = tokens[pos++];
+      if (!close || close.type !== 'paren' || close.value !== ')') fail();
+      return v;
+    }
+    return fail();
+  }
+
+  const value = parseExpr();
+  if (pos !== tokens.length) fail();
+  return value;
 }
 
 function isTwentyFour(value: number): boolean {
@@ -221,10 +269,13 @@ Deno.serve(async req => {
         .update({ wrong: session.wrong + 1, current_streak: 0, duration_ms: durationMs })
         .eq('id', session.id);
 
-      return new Response(JSON.stringify({ correct: false, roundOver }), { status: 200, headers: cors });
+      // value = what the submitted expression actually came to (null if it
+      // couldn't be computed, e.g. ÷0) so the player can see how far off
+      // they were. Safe to reveal: it's just their own expression's value.
+      return new Response(JSON.stringify({ correct: false, roundOver, value: result }), { status: 200, headers: cors });
     }
 
-    const totalMs = (LEVEL_TIME_SECONDS[round.level] || 25) * 1000;
+    const totalMs = (LEVEL_TIME_SECONDS[round.level] ?? 0) * 1000;
     const elapsedMs = Date.now() - new Date(round.created_at).getTime();
     const remainingMs = Math.max(0, totalMs - elapsedMs);
     const newStreak = session.current_streak + 1;
@@ -244,7 +295,16 @@ Deno.serve(async req => {
       })
       .eq('id', session.id);
 
-    return new Response(JSON.stringify({ correct: true, gained, newScore, newStreak }), {
+    // Report the player's unlocked level after this answer so the client
+    // can celebrate the moment a new stage opens up.
+    const { data: progress } = await adminClient
+      .from('player_levels')
+      .select('player_level')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    const unlockedLevel = progress?.player_level ?? 1;
+
+    return new Response(JSON.stringify({ correct: true, gained, newScore, newStreak, unlockedLevel, value: result }), {
       status: 200,
       headers: cors
     });

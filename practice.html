@@ -19,7 +19,7 @@
 <link rel="stylesheet" href="css/game.css?v=4">
 <link rel="stylesheet" href="css/responsive.css?v=2">
 <link rel="stylesheet" href="css/fantasy.css?v=5">
-<link rel="stylesheet" href="css/jewel.css?v=4">
+<link rel="stylesheet" href="css/jewel.css?v=5">
 </head>
 <body data-fx="calm">
   <div id="auth-gate-overlay" class="auth-gate-overlay">
@@ -46,14 +46,7 @@
     <section id="setup-panel" class="panel">
       <img src="assets/nav-icon-practice.png?v=2" alt="" class="page-icon">
       <h2 class="shimmer-text">PRACTICE MODE</h2>
-      <p class="panel-sub">ฝึกแก้โจทย์ 24 แบบไม่จำกัดเวลา เลือกระดับความยากแล้วเริ่มได้เลย</p>
-      <div class="level-grid">
-        <button class="level-btn" data-level="1"><span class="lv-num">1</span><span class="lv-name">Beginner</span><span class="lv-mult">×1.0</span></button>
-        <button class="level-btn" data-level="2"><span class="lv-num">2</span><span class="lv-name">Easy</span><span class="lv-mult">×1.2</span></button>
-        <button class="level-btn" data-level="3"><span class="lv-num">3</span><span class="lv-name">Medium</span><span class="lv-mult">×1.5</span></button>
-        <button class="level-btn" data-level="4"><span class="lv-num">4</span><span class="lv-name">Hard</span><span class="lv-mult">×2.0</span></button>
-        <button class="level-btn" data-level="5"><span class="lv-num">5</span><span class="lv-name">Expert</span><span class="lv-mult">×3.0</span></button>
-      </div>
+      <p class="panel-sub">ฝึกแก้โจทย์ 24 จากเลข 1–9 แบบไม่จับเวลา ใช้ + − × ÷ ยกกำลัง √ และ ! ได้ ไม่บันทึกคะแนน มีปุ่มดูเฉลย</p>
       <div class="panel-actions">
         <button id="start-game-btn" class="btn btn-primary">เริ่มฝึกซ้อม</button>
       </div>
@@ -86,12 +79,15 @@
       <div class="keypad">
         <button class="op-btn" id="op-open" data-op="(">(</button>
         <button class="op-btn" id="op-close" data-op=")">)</button>
+        <button class="op-btn op-extra" id="op-sqrt" title="รากที่สอง — ใส่หน้าตัวเลขหรือวงเล็บ">√</button>
+        <button class="op-btn op-extra" id="op-fact" title="แฟกทอเรียล — ใส่หลังตัวเลขหรือวงเล็บ">!</button>
         <button class="op-btn op-symbol" data-op="/">÷</button>
         <button class="op-btn op-symbol" data-op="*">×</button>
         <button class="op-btn op-symbol" data-op="-">−</button>
         <button class="op-btn op-symbol" data-op="+">+</button>
+        <button class="op-btn op-symbol" data-op="^" title="ยกกำลัง">x<sup>y</sup></button>
         <button class="op-btn" id="op-back">⌫</button>
-        <button class="op-btn" id="op-clear">C</button>
+        <button class="op-btn op-wide" id="op-clear">C</button>
       </div>
 
       <div class="keypad-actions">
@@ -126,12 +122,12 @@
 
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script src="js/supabaseClient.js"></script>
-  <script src="js/puzzle.js?v=2"></script>
-  <script src="js/scoring.js?v=2"></script>
+  <script src="js/puzzle.js?v=3"></script>
+  <script src="js/scoring.js?v=3"></script>
   <script src="js/ui.js"></script>
   <script src="js/auth.js?v=2"></script>
   <script src="js/sound.js"></script>
-  <script src="js/game.js?v=4"></script>
+  <script src="js/game.js?v=6"></script>
   <script>
     (async () => {
       const overlay = document.getElementById('auth-gate-overlay');
