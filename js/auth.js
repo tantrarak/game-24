@@ -17,9 +17,19 @@
     return !!(data && data.is_banned);
   }
 
+  // Staff accounts (e.g. teachers) sign in with a plain username instead of
+  // an email: "Krunum" -> "krunum@game24.local". Those accounts are created
+  // in Supabase Dashboard -> Authentication -> Users with that address.
+  const USERNAME_DOMAIN = 'game24.local';
+
+  function toLoginEmail(id) {
+    const trimmed = String(id || '').trim();
+    return trimmed.includes('@') ? trimmed : `${trimmed.toLowerCase()}@${USERNAME_DOMAIN}`;
+  }
+
   async function handleLogin({ email, password }) {
     if (!global.SUPABASE_CONFIGURED) return notConfigured();
-    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    const { data, error } = await sb.auth.signInWithPassword({ email: toLoginEmail(email), password });
     if (error) return { ok: false, message: mapAuthError(error) };
 
     if (await isBanned(data.user.id)) {
