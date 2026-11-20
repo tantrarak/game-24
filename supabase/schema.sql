@@ -16,6 +16,42 @@ create table if not exists public.profiles (
   created_at timestamptz not null default now()
 );
 
+-- School-issued student accounts (bulk-imported from the registrar's
+-- list) sign in with their first name + password instead of an email:
+-- login_name = first name, login_full = "first last", student_id keeps a
+-- re-import from creating duplicates. All NULL for self-registered email
+-- accounts. Their auth email is opaque (st-<random>@game24.local).
+alter table public.profiles add column if not exists login_name text;
+alter table public.profiles add column if not exists login_full text;
+alter table public.profiles add column if not exists student_id text;
+create unique index if not exists profiles_student_id_key
+  on public.profiles(student_id) where student_id is not null;
+create index if not exists profiles_login_name_idx on public.profiles(login_name);
+create index if not exists profiles_login_full_idx on public.profiles(login_full);
+
+-- Name -> candidate sign-in emails for the name + password login. First
+-- names repeat (up to 4 students share one), so this can return several
+-- emails and the client tries the password against each. The emails are
+-- random and say nothing about the student, so handing them out before
+-- sign-in reveals nothing useful — the password is still required.
+create or replace function public.login_emails_for(p_name text)
+returns setof text
+language sql
+stable
+security definer set search_path = public
+as $$
+  select u.email::text
+  from public.profiles p
+  join auth.users u on u.id = p.id
+  where p.login_name is not null
+    and (p.login_name = regexp_replace(btrim(p_name), '\s+', ' ', 'g')
+      or p.login_full = regexp_replace(btrim(p_name), '\s+', ' ', 'g'))
+  limit 10;
+$$;
+
+revoke all on function public.login_emails_for(text) from public;
+grant execute on function public.login_emails_for(text) to anon, authenticated;
+
 -- Auto-create a profile row whenever someone signs up.
 -- Reads the metadata passed via supabase.auth.signUp({ options: { data: {...} } })
 create or replace function public.handle_new_user()
@@ -65,6 +101,10 @@ begin
   if auth.uid() is not null and not public.is_admin(auth.uid()) then
     new.is_admin := old.is_admin;
     new.is_banned := old.is_banned;
+    -- school-issued sign-in identity: only an admin (or SQL) may change it
+    new.login_name := old.login_name;
+    new.login_full := old.login_full;
+    new.student_id := old.student_id;
   end if;
 
   -- Block only the act of *banning yourself* (false -> true) through the

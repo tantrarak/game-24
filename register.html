@@ -39,45 +39,15 @@
 
   <main class="container">
     <div class="auth-wrap">
-      <h2 class="shimmer-text">สมัครสมาชิก</h2>
-      <p class="auth-sub">สร้างบัญชีเพื่อบันทึกคะแนนสะสมและแข่งขันบน Leaderboard</p>
-      <form id="register-form">
-        <div class="field">
-          <label for="name">ชื่อ-นามสกุล / ชื่อเล่น</label>
-          <input type="text" id="name" name="name" autocomplete="name" placeholder="เช่น สมชาย ใจดี" required>
-        </div>
-        <div class="field">
-          <label for="reg-email">อีเมล</label>
-          <input type="email" id="reg-email" name="email" autocomplete="email" inputmode="email" placeholder="you@example.com" required>
-        </div>
-        <div class="field">
-          <label for="reg-password">รหัสผ่าน</label>
-          <input type="password" id="reg-password" name="password" autocomplete="new-password" placeholder="••••••••" required>
-        </div>
-        <div class="field">
-          <label for="school">โรงเรียน</label>
-          <input type="text" id="school" name="school" value="TANTRARAK SCHOOL" readonly>
-        </div>
-        <div class="field">
-          <label for="grade">ระดับชั้น</label>
-          <select id="grade" name="grade" required>
-            <option value="">เลือกระดับชั้น</option>
-            <option value="ม.1">มัธยมศึกษาปีที่ 1</option>
-            <option value="ม.2">มัธยมศึกษาปีที่ 2</option>
-            <option value="ม.3">มัธยมศึกษาปีที่ 3</option>
-            <option value="ม.4">มัธยมศึกษาปีที่ 4</option>
-            <option value="ม.5">มัธยมศึกษาปีที่ 5</option>
-            <option value="ม.6">มัธยมศึกษาปีที่ 6</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="classroom">ห้องเรียน</label>
-          <input type="text" id="classroom" name="classroom" placeholder="เช่น ม.3/1">
-        </div>
-        <button type="submit" class="btn btn-primary" style="width:100%;">สมัครสมาชิก</button>
-      </form>
-      <div id="register-note" class="auth-note hidden"></div>
-      <p class="auth-switch">มีบัญชีอยู่แล้ว? <a href="login">เข้าสู่ระบบ</a></p>
+      <h2 class="shimmer-text">ปิดรับสมัครสมาชิก</h2>
+      <p class="auth-sub">นักเรียนทุกคนมีบัญชีที่โรงเรียนสร้างให้แล้ว ไม่ต้องสมัครเอง</p>
+      <ul class="guide-score-list" style="margin:18px 0;">
+        <li><strong>ชื่อผู้ใช้</strong> — ชื่อจริงภาษาไทย เช่น ธนกร</li>
+        <li><strong>รหัสผ่านครั้งแรก</strong> — รหัสนักเรียน 4 หลัก</li>
+        <li>เข้าสู่ระบบแล้ว เปลี่ยนรหัสผ่านได้ที่หน้า <strong>ประวัติของฉัน</strong></li>
+      </ul>
+      <a href="login" class="btn btn-primary" style="width:100%;">ไปหน้าเข้าสู่ระบบ</a>
+      <p class="auth-switch">ไม่มีชื่อในระบบหรือลืมรหัสผ่าน? ติดต่อครูคณิตศาสตร์</p>
     </div>
   </main>
 
@@ -88,11 +58,10 @@
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script src="js/supabaseClient.js"></script>
   <script src="js/ui.js"></script>
-  <script src="js/auth.js?v=4"></script>
+  <script src="js/auth.js?v=5"></script>
   <script>
     UI24.initNav();
     Auth24.renderNavAuthState();
-    Auth24.bindForm('register-form', 'register-note', Auth24.handleRegister);
   </script>
   <script src="js/pixel-fx.js?v=2" defer></script>
 </body>

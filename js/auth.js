@@ -6,7 +6,7 @@
 
   function mapAuthError(error) {
     const msg = error && error.message ? error.message : '';
-    if (msg.includes('Invalid login credentials')) return 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
+    if (msg.includes('Invalid login credentials')) return 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
     if (msg.includes('already registered') || msg.includes('already exists')) return 'อีเมลนี้ถูกใช้สมัครแล้ว';
     if (msg.includes('Password should be')) return 'รหัสผ่านสั้นเกินไป (อย่างน้อย 6 ตัวอักษร)';
     return msg || 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
@@ -27,9 +27,27 @@
     return trimmed.includes('@') ? trimmed : `${trimmed.toLowerCase()}@${USERNAME_DOMAIN}`;
   }
 
+  // Which auth emails to try for what was typed in the login box:
+  // - an email address -> that email
+  // - a student's first name (or "first last") -> every account with that
+  //   name (names repeat; the password decides which one it is)
+  // - otherwise a staff username, e.g. "Krunum" -> krunum@game24.local
+  async function loginCandidates(id) {
+    const trimmed = String(id || '').trim();
+    if (trimmed.includes('@')) return [trimmed];
+    const { data, error } = await sb.rpc('login_emails_for', { p_name: trimmed });
+    if (error) console.error('[GAME24] login_emails_for error', error);
+    return data && data.length ? data : [toLoginEmail(trimmed)];
+  }
+
   async function handleLogin({ email, password }) {
     if (!global.SUPABASE_CONFIGURED) return notConfigured();
-    const { data, error } = await sb.auth.signInWithPassword({ email: toLoginEmail(email), password });
+    let data = null;
+    let error = null;
+    for (const candidate of await loginCandidates(email)) {
+      ({ data, error } = await sb.auth.signInWithPassword({ email: candidate, password }));
+      if (!error) break;
+    }
     if (error) return { ok: false, message: mapAuthError(error) };
 
     if (await isBanned(data.user.id)) {
@@ -68,7 +86,13 @@
     if (!menu || !global.SUPABASE_CONFIGURED) return;
 
     const user = await getCurrentUser();
-    if (!user) return;
+    if (!user) {
+      // sign-up is closed (accounts are issued by the school), so a
+      // signed-out visitor only gets the LOGIN link
+      const reg = menu.querySelector('a[href="register"]');
+      if (reg) reg.parentElement.remove();
+      return;
+    }
 
     const loginLink = menu.querySelector('a[href="login"]');
     if (loginLink) loginLink.parentElement.remove();
@@ -92,6 +116,17 @@
       li.innerHTML = '<a href="admin">ADMIN</a>';
       menu.insertBefore(li, registerLink ? registerLink.parentElement : null);
     }
+  }
+
+  // Logged-in player sets their own password (students start with their
+  // student ID, which classmates can guess).
+  async function changePassword(newPassword, confirmPassword) {
+    if (!global.SUPABASE_CONFIGURED) return notConfigured();
+    if ((newPassword || '').length < 6) return { ok: false, message: 'รหัสผ่านใหม่ต้องยาวอย่างน้อย 6 ตัวอักษร' };
+    if (newPassword !== confirmPassword) return { ok: false, message: 'รหัสผ่านใหม่ทั้งสองช่องไม่ตรงกัน' };
+    const { error } = await sb.auth.updateUser({ password: newPassword });
+    if (error) return { ok: false, message: mapAuthError(error) };
+    return { ok: true, message: 'เปลี่ยนรหัสผ่านเรียบร้อย ครั้งหน้าใช้รหัสใหม่ในการเข้าสู่ระบบ' };
   }
 
   async function getCurrentSeason() {
@@ -169,6 +204,7 @@
     handleRegister,
     getCurrentUser,
     signOut,
+    changePassword,
     renderNavAuthState,
     getCurrentSeason,
     getPlayerStats,

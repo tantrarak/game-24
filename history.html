@@ -57,6 +57,23 @@
       <h2 class="shimmer-text">🕑 เกมล่าสุด</h2>
       <div class="history-list" id="history-list"></div>
     </section>
+
+    <section class="panel guide-section">
+      <h2 class="shimmer-text">🔑 เปลี่ยนรหัสผ่าน</h2>
+      <p class="panel-sub">ถ้ายังใช้รหัสนักเรียนเป็นรหัสผ่าน ควรเปลี่ยนเป็นรหัสของตัวเอง เพื่อนจะได้เข้าบัญชีแทนไม่ได้ (อย่างน้อย 6 ตัวอักษร)</p>
+      <form id="password-form" class="password-form">
+        <div class="field">
+          <label for="new-password">รหัสผ่านใหม่</label>
+          <input type="password" id="new-password" name="newPassword" autocomplete="new-password" minlength="6" required>
+        </div>
+        <div class="field">
+          <label for="confirm-password">ยืนยันรหัสผ่านใหม่</label>
+          <input type="password" id="confirm-password" name="confirmPassword" autocomplete="new-password" minlength="6" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;">บันทึกรหัสผ่านใหม่</button>
+      </form>
+      <div id="password-note" class="auth-note hidden"></div>
+    </section>
   </main>
 
   <footer class="site-footer">
@@ -67,7 +84,7 @@
   <script src="js/supabaseClient.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/scoring.js?v=4"></script>
-  <script src="js/auth.js?v=4"></script>
+  <script src="js/auth.js?v=5"></script>
   <script src="js/history.js?v=3"></script>
   <script>
     (async () => {
@@ -91,6 +108,20 @@
       History24.renderSummary(document.getElementById('history-summary'), rows);
       History24.renderBadges(document.getElementById('badges-list'), History24.computeBadges(rows));
       History24.renderHistory(document.getElementById('history-list'), rows);
+
+      const pwForm = document.getElementById('password-form');
+      const pwNote = document.getElementById('password-note');
+      pwForm.addEventListener('submit', async e => {
+        e.preventDefault();
+        const btn = pwForm.querySelector('button');
+        btn.disabled = true;
+        const res = await Auth24.changePassword(pwForm.newPassword.value, pwForm.confirmPassword.value);
+        btn.disabled = false;
+        pwNote.textContent = res.message;
+        pwNote.classList.remove('hidden');
+        pwNote.classList.toggle('auth-note-error', !res.ok);
+        if (res.ok) pwForm.reset();
+      });
     })();
   </script>
   <script src="js/pixel-fx.js?v=2" defer></script>

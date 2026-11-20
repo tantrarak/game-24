@@ -43,17 +43,17 @@
       <p class="auth-sub">เก็บคะแนนสะสมและขึ้นอันดับ Leaderboard ของคุณ</p>
       <form id="login-form">
         <div class="field">
-          <label for="email">อีเมล หรือชื่อผู้ใช้</label>
-          <input type="text" id="email" name="email" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="you@example.com หรือชื่อผู้ใช้" required>
+          <label for="email">ชื่อจริง (หรืออีเมล)</label>
+          <input type="text" id="email" name="email" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="เช่น ธนกร" required>
         </div>
         <div class="field">
-          <label for="password">รหัสผ่าน</label>
+          <label for="password">รหัสผ่าน (ครั้งแรกใช้รหัสนักเรียน)</label>
           <input type="password" id="password" name="password" autocomplete="current-password" placeholder="••••••••" required>
         </div>
         <button type="submit" class="btn btn-primary" style="width:100%;">เข้าสู่ระบบ</button>
       </form>
       <div id="login-note" class="auth-note hidden"></div>
-      <p class="auth-switch">ยังไม่มีบัญชี? <a href="register">สมัครสมาชิก</a></p>
+      <p class="auth-switch">ยังไม่มีบัญชีหรือลืมรหัสผ่าน? ติดต่อครูคณิตศาสตร์</p>
     </div>
   </main>
 
@@ -64,7 +64,7 @@
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script src="js/supabaseClient.js"></script>
   <script src="js/ui.js"></script>
-  <script src="js/auth.js?v=4"></script>
+  <script src="js/auth.js?v=5"></script>
   <script>
     UI24.initNav();
     Auth24.renderNavAuthState();

@@ -36,18 +36,18 @@
 
         <form id="gate-login-form">
           <div class="field">
-            <label for="gate-email">อีเมล หรือชื่อผู้ใช้</label>
-            <input type="text" id="gate-email" name="email" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="you@example.com หรือชื่อผู้ใช้" required>
+            <label for="gate-email">ชื่อจริง (หรืออีเมล)</label>
+            <input type="text" id="gate-email" name="email" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="เช่น ธนกร" required>
           </div>
           <div class="field">
-            <label for="gate-password">รหัสผ่าน</label>
+            <label for="gate-password">รหัสผ่าน (ครั้งแรกใช้รหัสนักเรียน)</label>
             <input type="password" id="gate-password" name="password" autocomplete="current-password" placeholder="••••••••" required>
           </div>
           <button type="submit" class="btn btn-primary" style="width:100%;">เข้าสู่ระบบ</button>
         </form>
         <div id="gate-login-note" class="auth-note hidden"></div>
 
-        <p class="auth-switch">ยังไม่มีบัญชี? <a href="register">สมัครสมาชิก</a></p>
+        <p class="auth-switch">ยังไม่มีบัญชีหรือลืมรหัสผ่าน? ติดต่อครูคณิตศาสตร์</p>
         <p class="auth-switch"><a href="guide">วิธีเล่นเกม</a> · <a href="ranking">ดู Leaderboard</a></p>
       </div>
     </div>
@@ -133,7 +133,7 @@
   <script src="js/supabaseClient.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/scoring.js?v=4"></script>
-  <script src="js/auth.js?v=4"></script>
+  <script src="js/auth.js?v=5"></script>
   <script>
     (async () => {
       const overlay = document.getElementById('auth-gate-overlay');
