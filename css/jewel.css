@@ -880,3 +880,33 @@ h2.shimmer-text {
     padding: 3px 10px;
   }
 }
+
+/* ---------- Performance ----------
+   - The nav's backdrop blur sat over the animated pixel scene, so the blur
+     was recomputed every frame — very heavy on phones. The nav background
+     is ~90% opaque anyway, so the blur added almost nothing visible.
+   - The gold headings carry a filter (drop-shadow) and an endless sheen;
+     animating a filtered element repaints it every frame. Play the sheen
+     once on load instead, then the heading is a static, cached image.
+   - background-attachment: fixed on an already position:fixed layer only
+     forces extra repaints on scroll. */
+.site-nav {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.shimmer-text,
+h1.shimmer-text,
+h2.shimmer-text {
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+}
+
+body::before {
+  background-attachment: scroll;
+}
+
+/* leaderboard #1 row: glow a few times, not forever */
+.rank-row.top-1 {
+  animation-iteration-count: 1, 3;
+}

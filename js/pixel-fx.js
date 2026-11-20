@@ -16,8 +16,9 @@
    <body data-fx="calm"> (practice/challenge) drops the rain and most
    fireflies and dims the scene so it never competes with the puzzle. */
 (function () {
-  const FPS = 20;
-  const FRAME_MS = 1000 / FPS;
+  // Frame rate is picked per device in boot(): 20fps normally, 12fps on
+  // phones / low-core devices, 10fps on the calm game pages.
+  let FRAME_MS = 1000 / 20;
   const SCENE_H = 96; // art px of the baked bottom strip
   const GROUND_H = 8;
 
@@ -309,6 +310,10 @@
 
   function boot() {
     const calm = document.body.dataset.fx === 'calm';
+    // phones and low-core machines get a lighter scene (no rain, fewer
+    // fireflies, lower frame rate) so the page itself stays responsive
+    const lowPower = window.innerWidth < 600 || (navigator.hardwareConcurrency || 8) <= 4;
+    FRAME_MS = 1000 / (calm ? 10 : lowPower ? 12 : 20);
     const reduceMq = window.matchMedia('(prefers-reduced-motion: reduce)');
     const saveData = !!(navigator.connection && navigator.connection.saveData);
 
@@ -428,14 +433,14 @@
         phase: rand(0, Math.PI * 2), speed: rand(0.6, 1.8)
       }));
       const crystal = spots.crystals[0];
-      const nFlies = calm ? 5 : Math.min(18, Math.round(W / 26));
+      const nFlies = calm ? 5 : lowPower ? 6 : Math.min(18, Math.round(W / 26));
       flies = Array.from({ length: nFlies }, (_, i) => {
         const cyan = i % 2 === 0;
         return cyan
           ? { cyan, x: crystal.x + rand(-35, 35), y: H - SCENE_H + rand(20, SCENE_H - 14), vx: rand(-2, 2), phase: rand(0, 6) }
           : { cyan, x: rand(0, W), y: rand(H * 0.25, H - 14), vx: rand(-3, 3), phase: rand(0, 6) };
       });
-      drops = calm ? [] : Array.from({ length: Math.min(70, Math.round(W / 6)) }, () => ({
+      drops = calm || lowPower ? [] : Array.from({ length: Math.min(70, Math.round(W / 6)) }, () => ({
         x: rand(0, W + 30), y: rand(-H, H), v: rand(95, 135)
       }));
       clouds = Array.from({ length: W > 300 ? 4 : 2 }, (_, i) => {
