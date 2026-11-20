@@ -94,6 +94,17 @@
       return;
     }
 
+    // who is signed in: "ธนกร จันทหอม · ม.4/1" next to the logo on every page
+    const navInner = document.querySelector('.nav-inner');
+    if (navInner && user.profile && !navInner.querySelector('.nav-user')) {
+      const chip = document.createElement('span');
+      chip.className = 'nav-user';
+      const cls = user.profile.classroom ? ` · ${user.profile.classroom}` : '';
+      chip.textContent = `👤 ${user.profile.name}${cls}`;
+      chip.title = chip.textContent;
+      navInner.insertBefore(chip, navInner.querySelector('.nav-toggle'));
+    }
+
     const loginLink = menu.querySelector('a[href="login"]');
     if (loginLink) loginLink.parentElement.remove();
 
