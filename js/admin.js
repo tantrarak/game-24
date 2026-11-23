@@ -173,7 +173,8 @@
 
   // One row per player for the current season: level, total, points per
   // level, games, answers, accuracy. Includes players who haven't played.
-  async function exportSeasonSummary(season) {
+  // Row[0] is always the classroom (used to filter / split by class).
+  async function buildSummary(season) {
     const [profiles, scores, levels] = await Promise.all([
       fetchAllRows(() => sb.from('profiles').select('id, name, grade, classroom, student_id, is_banned, is_admin')),
       fetchAllRows(() => sb.from('scores').select('user_id, level, score, correct, wrong, best_streak, created_at').eq('season', season)),
@@ -203,16 +204,25 @@
         const a = agg.get(p.id) || { total: 0, games: 0, correct: 0, wrong: 0, streak: 0, last: null, perLevel: {} };
         const attempts = a.correct + a.wrong;
         const lv = levelOf.get(p.id);
-        return [p.classroom, p.grade, p.student_id, p.name, lv ? lv.player_level : 1, a.total,
+        return [p.classroom || '', p.grade, p.student_id, p.name, lv ? lv.player_level : 1, a.total,
           ...levelCols.map(n => a.perLevel[n] || 0), a.games, a.correct, a.wrong,
           attempts ? Math.round((a.correct / attempts) * 100) : 0, a.streak, thDate(a.last), p.is_banned ? 'ถูกระงับ' : ''];
       });
-    downloadCsv(`game24-season${season}-summary-${today()}.csv`, headers, rows);
-    return rows.length;
+    return { headers, rows };
+  }
+
+  // classroom '' = every class; filenames can't contain "/" so ม.4/1 -> ม.4_1
+  const classTag = classroom => (classroom ? `-${classroom.replace(/[\\/:*?"<>|\[\]]/g, '_')}` : '');
+
+  async function exportSeasonSummary(season, classroom) {
+    const { headers, rows } = await buildSummary(season);
+    const picked = classroom ? rows.filter(r => r[0] === classroom) : rows;
+    downloadCsv(`game24-season${season}-summary${classTag(classroom)}-${today()}.csv`, headers, picked);
+    return picked.length;
   }
 
   // Every Challenge game this season, newest first.
-  async function exportSeasonGames(season) {
+  async function exportSeasonGames(season, classroom) {
     const [profiles, scores] = await Promise.all([
       fetchAllRows(() => sb.from('profiles').select('id, name, classroom, student_id')),
       fetchAllRows(() => sb.from('scores').select('user_id, level, score, correct, wrong, best_streak, duration_ms, created_at')
@@ -220,13 +230,65 @@
     ]);
     const who = new Map(profiles.map(p => [p.id, p]));
     const headers = ['วันเวลา', 'ห้อง', 'รหัสนักเรียน', 'ชื่อ-นามสกุล', 'เลเวล', 'คะแนน', 'ตอบถูก', 'ตอบผิด', 'สตรีคสูงสุด', 'ระยะเวลา (นาที:วินาที)'];
-    const rows = scores.map(s => {
-      const p = who.get(s.user_id) || {};
-      const sec = Math.round((s.duration_ms || 0) / 1000);
-      return [thDate(s.created_at), p.classroom, p.student_id, p.name, s.level, s.score, s.correct, s.wrong, s.best_streak,
-        `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`];
-    });
-    downloadCsv(`game24-season${season}-games-${today()}.csv`, headers, rows);
+    const rows = scores
+      .filter(s => !classroom || (who.get(s.user_id) || {}).classroom === classroom)
+      .map(s => {
+        const p = who.get(s.user_id) || {};
+        const sec = Math.round((s.duration_ms || 0) / 1000);
+        return [thDate(s.created_at), p.classroom, p.student_id, p.name, s.level, s.score, s.correct, s.wrong, s.best_streak,
+          `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`];
+      });
+    downloadCsv(`game24-season${season}-games${classTag(classroom)}-${today()}.csv`, headers, rows);
+    return rows.length;
+  }
+
+  // Classrooms that have at least one (non-admin) player, in school order.
+  async function listClassrooms() {
+    const profiles = await fetchAllRows(() => sb.from('profiles').select('classroom, is_admin'));
+    const set = new Set(profiles.filter(p => !p.is_admin && p.classroom).map(p => p.classroom));
+    return [...set].sort((a, b) => a.localeCompare(b, 'th', { numeric: true }));
+  }
+
+  // SheetJS (~880 KB) is only fetched when someone actually asks for .xlsx.
+  let xlsxLoading = null;
+  function loadSheetJs() {
+    if (global.XLSX) return Promise.resolve(global.XLSX);
+    if (!xlsxLoading) {
+      xlsxLoading = new Promise((resolve, reject) => {
+        const tag = document.createElement('script');
+        tag.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+        tag.onload = () => resolve(global.XLSX);
+        tag.onerror = () => {
+          xlsxLoading = null;
+          reject(new Error('could not load SheetJS'));
+        };
+        document.head.appendChild(tag);
+      });
+    }
+    return xlsxLoading;
+  }
+
+  // One Excel file, one sheet per classroom (like the registrar's export).
+  async function exportSummaryByClassXlsx(season) {
+    const [XLSX, { headers, rows }] = await Promise.all([loadSheetJs(), buildSummary(season)]);
+    const groups = new Map();
+    for (const r of rows) {
+      const key = r[0] || 'ไม่ระบุห้อง';
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(r);
+    }
+    const wb = XLSX.utils.book_new();
+    const used = new Set();
+    for (const [classroom, classRows] of groups) {
+      // sheet names: max 31 chars, no / \ ? * [ ] :
+      let name = classroom.replace(/[\\/?*\[\]:]/g, '_').slice(0, 31);
+      while (used.has(name)) name = `${name.slice(0, 28)}_${used.size}`;
+      used.add(name);
+      const sheet = XLSX.utils.aoa_to_sheet([headers, ...classRows]);
+      sheet['!cols'] = headers.map((h, i) => ({ wch: i === 3 ? 26 : Math.max(8, Math.min(16, h.length + 2)) }));
+      XLSX.utils.book_append_sheet(wb, sheet, name);
+    }
+    XLSX.writeFile(wb, `game24-season${season}-by-class-${today()}.xlsx`);
     return rows.length;
   }
 
@@ -240,6 +302,8 @@
     getSeasonInfo,
     startNewSeason,
     exportSeasonSummary,
-    exportSeasonGames
+    exportSeasonGames,
+    exportSummaryByClassXlsx,
+    listClassrooms
   };
 })(window);

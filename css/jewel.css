@@ -941,3 +941,12 @@ body::before {
   gap: 8px;
   flex-wrap: wrap;
 }
+
+.export-actions select {
+  padding: 7px 10px;
+  font-family: var(--font);
+  color: var(--text);
+  background: linear-gradient(180deg, rgba(8, 6, 26, 0.85), rgba(22, 18, 54, 0.85));
+  border: 2px solid rgba(246, 197, 68, 0.55);
+  border-radius: 10px;
+}
