@@ -950,3 +950,17 @@ body::before {
   border: 2px solid rgba(246, 197, 68, 0.55);
   border-radius: 10px;
 }
+
+/* Dropdown lists: the open list is drawn by the OS with a light
+   background, so the site's light text vanished. Give options an explicit
+   dark background + light text everywhere. */
+select option,
+select optgroup {
+  background-color: #1c1640;
+  color: #f4f5ff;
+}
+
+select option:checked {
+  background-color: #6a4bd6;
+  color: #ffffff;
+}
