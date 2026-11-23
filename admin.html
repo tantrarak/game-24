@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="css/style.css?v=2">
 <link rel="stylesheet" href="css/responsive.css?v=2">
 <link rel="stylesheet" href="css/fantasy.css?v=5">
-<link rel="stylesheet" href="css/jewel.css?v=10">
+<link rel="stylesheet" href="css/jewel.css?v=11">
 </head>
 <body>
   <nav class="site-nav">
@@ -44,6 +44,14 @@
           <span class="admin-count" id="season-started" style="margin-left:12px;"></span>
         </div>
         <button id="new-season-btn" class="btn btn-danger btn-sm">🔄 เริ่มซีซันใหม่ (ล้างคะแนน)</button>
+      </div>
+
+      <div class="season-toolbar export-toolbar">
+        <span class="admin-count">ดาวน์โหลดคะแนนซีซันนี้ (เปิดด้วย Excel ได้)</span>
+        <div class="export-actions">
+          <button id="export-summary-btn" class="btn btn-primary btn-sm" type="button">⬇ สรุปรายคน</button>
+          <button id="export-games-btn" class="btn btn-outline btn-sm" type="button">⬇ ทุกเกม</button>
+        </div>
       </div>
 
       <div class="admin-toolbar">
@@ -87,7 +95,8 @@
   <script src="js/ui.js"></script>
   <script src="js/auth.js?v=6"></script>
   <script src="js/history.js?v=4"></script>
-  <script src="js/admin.js"></script>
+  <script src="js/scoring.js?v=5"></script>
+  <script src="js/admin.js?v=2"></script>
   <script>
     UI24.initNav();
     Auth24.renderNavAuthState();
@@ -161,6 +170,26 @@
           ? `เริ่มเมื่อ ${new Date(info.season_started_at).toLocaleDateString('th-TH')}`
           : '';
       }
+
+      async function runExport(btn, fn) {
+        const label = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'กำลังเตรียมไฟล์...';
+        try {
+          const n = await fn(currentSeason);
+          if (!n) alert('ยังไม่มีข้อมูลในซีซันนี้');
+        } catch (e) {
+          console.error('[GAME24] export failed', e);
+          alert('ดาวน์โหลดไม่สำเร็จ ลองใหม่อีกครั้ง');
+        } finally {
+          btn.disabled = false;
+          btn.textContent = label;
+        }
+      }
+      const exportSummaryBtn = document.getElementById('export-summary-btn');
+      const exportGamesBtn = document.getElementById('export-games-btn');
+      exportSummaryBtn.addEventListener('click', () => runExport(exportSummaryBtn, Admin24.exportSeasonSummary));
+      exportGamesBtn.addEventListener('click', () => runExport(exportGamesBtn, Admin24.exportSeasonGames));
 
       newSeasonBtn.addEventListener('click', async () => {
         const confirmed = confirm(

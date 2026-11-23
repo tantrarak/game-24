@@ -930,3 +930,14 @@ body::before {
     font-size: 10px;
   }
 }
+
+/* admin: score export row */
+.export-toolbar {
+  margin-top: 10px;
+}
+
+.export-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}

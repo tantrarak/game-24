@@ -1,4 +1,5 @@
-/* admin.js — admin-only player management: search, ban/unban, permanent delete. */
+/* admin.js — admin-only player management: search, ban/unban, permanent
+   delete, and CSV export of scores (opens directly in Excel). */
 (function (global) {
   const DELETE_FUNCTION = 'admin-delete-user';
 
@@ -129,6 +130,106 @@
     }
   }
 
+  // ---------- CSV export ----------
+  // Supabase returns at most 1,000 rows per request, so page through.
+  async function fetchAllRows(makeQuery) {
+    const rows = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await makeQuery().range(from, from + 999);
+      if (error) throw error;
+      rows.push(...data);
+      if (data.length < 1000) return rows;
+    }
+  }
+
+  // Quote every field; prefix values that Excel would treat as a formula
+  // (a player's name starting with = + - @) so a name can't run as one.
+  function csvField(v) {
+    let s = v == null ? '' : String(v);
+    if (/^[=+\-@]/.test(s) && !/^-?\d+(\.\d+)?$/.test(s)) s = `'${s}`;
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+
+  function downloadCsv(filename, headers, rows) {
+    const lines = [headers, ...rows].map(r => r.map(csvField).join(','));
+    // BOM so Excel reads the file as UTF-8 and shows Thai correctly
+    const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  const thDate = d =>
+    d ? new Date(d).toLocaleString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+  const today = () => new Date().toISOString().slice(0, 10);
+  const byClassThenId = (a, b) =>
+    (a.classroom || '').localeCompare(b.classroom || '', 'th', { numeric: true }) ||
+    (a.student_id || '').localeCompare(b.student_id || '', 'th', { numeric: true }) ||
+    (a.name || '').localeCompare(b.name || '', 'th');
+
+  // One row per player for the current season: level, total, points per
+  // level, games, answers, accuracy. Includes players who haven't played.
+  async function exportSeasonSummary(season) {
+    const [profiles, scores, levels] = await Promise.all([
+      fetchAllRows(() => sb.from('profiles').select('id, name, grade, classroom, student_id, is_banned, is_admin')),
+      fetchAllRows(() => sb.from('scores').select('user_id, level, score, correct, wrong, best_streak, created_at').eq('season', season)),
+      fetchAllRows(() => sb.from('player_levels').select('*'))
+    ]);
+    const levelOf = new Map(levels.map(l => [l.user_id, l]));
+    const agg = new Map();
+    for (const s of scores) {
+      const a = agg.get(s.user_id) || { total: 0, games: 0, correct: 0, wrong: 0, streak: 0, last: null, perLevel: {} };
+      a.total += s.score;
+      a.games += 1;
+      a.correct += s.correct;
+      a.wrong += s.wrong;
+      a.streak = Math.max(a.streak, s.best_streak);
+      a.perLevel[s.level] = (a.perLevel[s.level] || 0) + s.score;
+      if (!a.last || s.created_at > a.last) a.last = s.created_at;
+      agg.set(s.user_id, a);
+    }
+    const maxLevel = global.Scoring24 ? Scoring24.MAX_LEVEL : 9;
+    const levelCols = Array.from({ length: maxLevel }, (_, i) => i + 1);
+    const headers = ['ห้อง', 'ระดับชั้น', 'รหัสนักเรียน', 'ชื่อ-นามสกุล', 'เลเวล', 'คะแนนรวมซีซันนี้',
+      ...levelCols.map(n => `คะแนนในเลเวล ${n}`), 'จำนวนเกม', 'ตอบถูก', 'ตอบผิด', 'ความแม่นยำ %', 'สตรีคสูงสุด', 'เล่นล่าสุด', 'หมายเหตุ'];
+    const rows = profiles
+      .filter(p => !p.is_admin)
+      .sort(byClassThenId)
+      .map(p => {
+        const a = agg.get(p.id) || { total: 0, games: 0, correct: 0, wrong: 0, streak: 0, last: null, perLevel: {} };
+        const attempts = a.correct + a.wrong;
+        const lv = levelOf.get(p.id);
+        return [p.classroom, p.grade, p.student_id, p.name, lv ? lv.player_level : 1, a.total,
+          ...levelCols.map(n => a.perLevel[n] || 0), a.games, a.correct, a.wrong,
+          attempts ? Math.round((a.correct / attempts) * 100) : 0, a.streak, thDate(a.last), p.is_banned ? 'ถูกระงับ' : ''];
+      });
+    downloadCsv(`game24-season${season}-summary-${today()}.csv`, headers, rows);
+    return rows.length;
+  }
+
+  // Every Challenge game this season, newest first.
+  async function exportSeasonGames(season) {
+    const [profiles, scores] = await Promise.all([
+      fetchAllRows(() => sb.from('profiles').select('id, name, classroom, student_id')),
+      fetchAllRows(() => sb.from('scores').select('user_id, level, score, correct, wrong, best_streak, duration_ms, created_at')
+        .eq('season', season).order('created_at', { ascending: false }))
+    ]);
+    const who = new Map(profiles.map(p => [p.id, p]));
+    const headers = ['วันเวลา', 'ห้อง', 'รหัสนักเรียน', 'ชื่อ-นามสกุล', 'เลเวล', 'คะแนน', 'ตอบถูก', 'ตอบผิด', 'สตรีคสูงสุด', 'ระยะเวลา (นาที:วินาที)'];
+    const rows = scores.map(s => {
+      const p = who.get(s.user_id) || {};
+      const sec = Math.round((s.duration_ms || 0) / 1000);
+      return [thDate(s.created_at), p.classroom, p.student_id, p.name, s.level, s.score, s.correct, s.wrong, s.best_streak,
+        `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`];
+    });
+    downloadCsv(`game24-season${season}-games-${today()}.csv`, headers, rows);
+    return rows.length;
+  }
+
   global.Admin24 = {
     guardAdminPage,
     loadUsers,
@@ -137,6 +238,8 @@
     toggleBan,
     deleteUserPermanently,
     getSeasonInfo,
-    startNewSeason
+    startNewSeason,
+    exportSeasonSummary,
+    exportSeasonGames
   };
 })(window);
