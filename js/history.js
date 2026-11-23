@@ -40,7 +40,7 @@
     const accuracy = attempts > 0 ? Math.round((correctSum / attempts) * 100) : 0;
     const bestStreak = rows.reduce((max, r) => Math.max(max, r.best_streak), 0);
     const maxScore = rows.reduce((max, r) => Math.max(max, r.score), 0);
-    const expertStreak3 = rows.some(r => r.level === 5 && r.best_streak >= 3);
+    const expertStreak3 = rows.some(r => r.level >= 6 && r.best_streak >= 3); // Expert (L6) or higher
     return { games, attempts, accuracy, bestStreak, maxScore, expertStreak3 };
   }
 

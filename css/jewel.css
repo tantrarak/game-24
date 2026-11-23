@@ -910,3 +910,23 @@ body::before {
 .rank-row.top-1 {
   animation-iteration-count: 1, 3;
 }
+
+/* 9 levels: a 3 × 3 grid of stage buttons */
+.level-grid.level-grid-9 {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.level-grid-9 .level-btn {
+  padding: 10px 4px;
+}
+
+@media (max-width: 600px) {
+  .level-grid.level-grid-9 {
+    gap: 7px;
+  }
+
+  .level-grid-9 .level-btn .lv-name {
+    font-size: 10px;
+  }
+}

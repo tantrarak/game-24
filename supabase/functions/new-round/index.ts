@@ -22,7 +22,7 @@ const TARGET = 24;
 // Every level draws single digits 1–9; levels differ ONLY by the time
 // limit per question. 0 = untimed (level 1). Keep in sync with
 // submit-answer and js/scoring.js LEVEL_TIME_SECONDS.
-const LEVEL_TIME_SECONDS: Record<number, number> = { 1: 0, 2: 60, 3: 45, 4: 30, 5: 20 };
+const LEVEL_TIME_SECONDS: Record<number, number> = { 1: 0, 2: 90, 3: 75, 4: 60, 5: 45, 6: 35, 7: 25, 8: 18, 9: 12 };
 const TIME_GRACE_MS = 5000; // same allowance as submit-answer
 const DIGIT_MIN = 1;
 const DIGIT_MAX = 9;
@@ -114,7 +114,7 @@ Deno.serve(async req => {
     const body = await req.json();
     const lvl = Number(body.level);
     const sessionId = body.sessionId;
-    if (!Number.isInteger(lvl) || lvl < 1 || lvl > 5) {
+    if (!Number.isInteger(lvl) || lvl < 1 || lvl > 9) {
       return new Response(JSON.stringify({ error: 'invalid level' }), { status: 400, headers: cors });
     }
     if (!sessionId) {

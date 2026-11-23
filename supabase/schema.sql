@@ -186,7 +186,7 @@ create table if not exists public.scores (
   id bigint generated always as identity primary key,
   user_id uuid not null references auth.users(id) on delete cascade,
   mode text not null default 'challenge',
-  level int not null check (level between 1 and 5),
+  level int not null check (level between 1 and 9),
   score int not null check (score >= 0),
   correct int not null default 0,
   wrong int not null default 0,
@@ -198,6 +198,10 @@ create table if not exists public.scores (
 
 alter table public.scores add column if not exists season int not null default 1;
 alter table public.scores add column if not exists current_streak int not null default 0;
+
+-- 9 levels since 2026-11-23 (was 5): widen the range check on existing tables
+alter table public.scores drop constraint if exists scores_level_check;
+alter table public.scores add constraint scores_level_check check (level between 1 and 9);
 
 -- Sanity cap on submitted scores: the highest possible score for one
 -- correct answer is (100 base + 50 time bonus + 100 max streak bonus) *
@@ -289,7 +293,7 @@ create table if not exists public.rounds (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   session_id bigint not null references public.scores(id) on delete cascade,
-  level int not null check (level between 1 and 5),
+  level int not null check (level between 1 and 9),
   numbers int[] not null,
   used boolean not null default false,
   correct boolean,
@@ -299,6 +303,9 @@ create table if not exists public.rounds (
 );
 
 alter table public.rounds add column if not exists wrong_attempts int not null default 0;
+
+alter table public.rounds drop constraint if exists rounds_level_check;
+alter table public.rounds add constraint rounds_level_check check (level between 1 and 9);
 
 create index if not exists rounds_session_id_idx on public.rounds(session_id);
 
@@ -328,7 +335,8 @@ create trigger stamp_score_season_trigger
 -- player_levels: the stage each player has unlocked this season.
 -- Levels work like stages: points earned AT a level (summed over this
 -- season's Challenge sessions played at that level) unlock the next one:
---   L1 -> L2: 5,000 · L2 -> L3: 15,000 · L3 -> L4: 30,000 · L4 -> L5: 50,000
+--   L1 -> L2: 5,000 · L2 -> L3: 10,000 · L3 -> L4: 15,000 · L4 -> L5: 20,000 ·
+--   L5 -> L6: 30,000 · L6 -> L7: 40,000 · L7 -> L8: 50,000 · L8 -> L9: 60,000
 -- Farming a lower level never unlocks anything beyond the next stage.
 -- Keep these thresholds in sync with js/scoring.js LEVEL_REQ. The
 -- new-round Edge Function reads this view to refuse rounds above the
@@ -347,7 +355,11 @@ with per_level as (
     coalesce(sum(s.score) filter (where s.level = 2), 0) as level2_points,
     coalesce(sum(s.score) filter (where s.level = 3), 0) as level3_points,
     coalesce(sum(s.score) filter (where s.level = 4), 0) as level4_points,
-    coalesce(sum(s.score) filter (where s.level = 5), 0) as level5_points
+    coalesce(sum(s.score) filter (where s.level = 5), 0) as level5_points,
+    coalesce(sum(s.score) filter (where s.level = 6), 0) as level6_points,
+    coalesce(sum(s.score) filter (where s.level = 7), 0) as level7_points,
+    coalesce(sum(s.score) filter (where s.level = 8), 0) as level8_points,
+    coalesce(sum(s.score) filter (where s.level = 9), 0) as level9_points
   from public.scores s
   cross join public.app_settings st
   where s.season = st.current_season
@@ -357,16 +369,24 @@ select
   user_id,
   case
     when level1_points < 5000 then 1
-    when level2_points < 15000 then 2
-    when level3_points < 30000 then 3
-    when level4_points < 50000 then 4
-    else 5
+    when level2_points < 10000 then 2
+    when level3_points < 15000 then 3
+    when level4_points < 20000 then 4
+    when level5_points < 30000 then 5
+    when level6_points < 40000 then 6
+    when level7_points < 50000 then 7
+    when level8_points < 60000 then 8
+    else 9
   end as player_level,
   level1_points,
   level2_points,
   level3_points,
   level4_points,
-  level5_points
+  level5_points,
+  level6_points,
+  level7_points,
+  level8_points,
+  level9_points
 from per_level;
 
 revoke all on public.player_levels from anon;

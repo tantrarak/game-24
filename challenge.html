@@ -19,7 +19,7 @@
 <link rel="stylesheet" href="css/game.css?v=4">
 <link rel="stylesheet" href="css/responsive.css?v=2">
 <link rel="stylesheet" href="css/fantasy.css?v=5">
-<link rel="stylesheet" href="css/jewel.css?v=9">
+<link rel="stylesheet" href="css/jewel.css?v=10">
 </head>
 <body data-fx="calm">
   <div id="auth-gate-overlay" class="auth-gate-overlay">
@@ -47,12 +47,16 @@
       <img src="assets/nav-icon-challenge.png?v=2" alt="" class="page-icon">
       <h2 class="shimmer-text">CHALLENGE MODE</h2>
       <p class="panel-sub">ผ่านด่านทีละเลเวล เก็บคะแนนในเลเวลปัจจุบันให้ครบเพื่อปลดล็อกเลเวลถัดไป ยิ่งเลเวลสูง เวลาต่อข้อยิ่งน้อยแต่คะแนนยิ่งคูณเยอะ</p>
-      <div class="level-grid">
+      <div class="level-grid level-grid-9">
         <button class="level-btn" data-level="1"><span class="lv-num">1</span><span class="lv-name">Beginner</span><span class="lv-time">ไม่จับเวลา</span><span class="lv-mult">×1.0</span></button>
-        <button class="level-btn" data-level="2"><span class="lv-num">2</span><span class="lv-name">Easy</span><span class="lv-time">60 วิ/ข้อ</span><span class="lv-mult">×1.2</span></button>
-        <button class="level-btn" data-level="3"><span class="lv-num">3</span><span class="lv-name">Medium</span><span class="lv-time">45 วิ/ข้อ</span><span class="lv-mult">×1.5</span></button>
-        <button class="level-btn" data-level="4"><span class="lv-num">4</span><span class="lv-name">Hard</span><span class="lv-time">30 วิ/ข้อ</span><span class="lv-mult">×2.0</span></button>
-        <button class="level-btn" data-level="5"><span class="lv-num">5</span><span class="lv-name">Expert</span><span class="lv-time">20 วิ/ข้อ</span><span class="lv-mult">×3.0</span></button>
+        <button class="level-btn" data-level="2"><span class="lv-num">2</span><span class="lv-name">Novice</span><span class="lv-time">90 วิ/ข้อ</span><span class="lv-mult">×1.1</span></button>
+        <button class="level-btn" data-level="3"><span class="lv-num">3</span><span class="lv-name">Apprentice</span><span class="lv-time">75 วิ/ข้อ</span><span class="lv-mult">×1.2</span></button>
+        <button class="level-btn" data-level="4"><span class="lv-num">4</span><span class="lv-name">Adept</span><span class="lv-time">60 วิ/ข้อ</span><span class="lv-mult">×1.4</span></button>
+        <button class="level-btn" data-level="5"><span class="lv-num">5</span><span class="lv-name">Skilled</span><span class="lv-time">45 วิ/ข้อ</span><span class="lv-mult">×1.6</span></button>
+        <button class="level-btn" data-level="6"><span class="lv-num">6</span><span class="lv-name">Expert</span><span class="lv-time">35 วิ/ข้อ</span><span class="lv-mult">×1.8</span></button>
+        <button class="level-btn" data-level="7"><span class="lv-num">7</span><span class="lv-name">Master</span><span class="lv-time">25 วิ/ข้อ</span><span class="lv-mult">×2.2</span></button>
+        <button class="level-btn" data-level="8"><span class="lv-num">8</span><span class="lv-name">Grandmaster</span><span class="lv-time">18 วิ/ข้อ</span><span class="lv-mult">×2.6</span></button>
+        <button class="level-btn" data-level="9"><span class="lv-num">9</span><span class="lv-name">Legend</span><span class="lv-time">12 วิ/ข้อ</span><span class="lv-mult">×3.0</span></button>
       </div>
       <div id="level-progress" class="level-progress"></div>
       <div class="panel-actions">
@@ -141,7 +145,7 @@
 
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script src="js/supabaseClient.js"></script>
-  <script src="js/scoring.js?v=4"></script>
+  <script src="js/scoring.js?v=5"></script>
   <script src="js/ui.js"></script>
   <script src="js/auth.js?v=6"></script>
   <script src="js/sound.js"></script>

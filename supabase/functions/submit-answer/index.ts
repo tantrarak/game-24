@@ -15,8 +15,8 @@ const TARGET = 24;
 
 // 0 = untimed (level 1, no time bonus). Keep in sync with new-round and
 // js/scoring.js LEVEL_TIME_SECONDS.
-const LEVEL_TIME_SECONDS: Record<number, number> = { 1: 0, 2: 60, 3: 45, 4: 30, 5: 20 };
-const LEVEL_MULTIPLIER: Record<number, number> = { 1: 1, 2: 1.2, 3: 1.5, 4: 2, 5: 3 };
+const LEVEL_TIME_SECONDS: Record<number, number> = { 1: 0, 2: 90, 3: 75, 4: 60, 5: 45, 6: 35, 7: 25, 8: 18, 9: 12 };
+const LEVEL_MULTIPLIER: Record<number, number> = { 1: 1, 2: 1.1, 3: 1.2, 4: 1.4, 5: 1.6, 6: 1.8, 7: 2.2, 8: 2.6, 9: 3 };
 const BASE_SCORE = 100;
 const MAX_TIME_BONUS = 50;
 const STREAK_STEP = 10;

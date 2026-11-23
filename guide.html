@@ -20,7 +20,7 @@
 <link rel="stylesheet" href="css/guide.css?v=3">
 <link rel="stylesheet" href="css/responsive.css?v=2">
 <link rel="stylesheet" href="css/fantasy.css?v=5">
-<link rel="stylesheet" href="css/jewel.css?v=9">
+<link rel="stylesheet" href="css/jewel.css?v=10">
 </head>
 <body>
   <nav class="site-nav">
@@ -111,7 +111,7 @@
           <h3>CHALLENGE</h3>
           <ul>
             <li>เล่นเป็นด่าน เริ่มที่เลเวล 1 แล้วปลดล็อกเลเวลถัดไปด้วยคะแนน</li>
-            <li>เลเวล 1 <strong>ไม่จับเวลา</strong> เลเวล 2–5 มีเวลาจำกัดต่อข้อ</li>
+            <li>มี 9 เลเวล เลเวล 1 <strong>ไม่จับเวลา</strong> เลเวล 2–9 มีเวลาจำกัดต่อข้อ ยิ่งสูงยิ่งสั้น</li>
             <li>ตอบถูก → ได้คะแนน + สุ่มข้อใหม่ + เวลารีเซ็ต</li>
             <li>ตอบผิด → ลองข้อเดิมต่อได้ แต่เวลาเดินต่อไปเรื่อยๆ</li>
             <li>ปุ่ม <strong>SKIP</strong> ข้ามข้อที่ยากเกินไปได้ (นับเป็นข้อพลาด)</li>
@@ -129,10 +129,14 @@
           <span>เลเวล</span><span>เวลาต่อข้อ</span><span>ปลดล็อกเมื่อ</span><span>ตัวคูณ</span>
         </div>
         <div class="guide-level-row guide-level-row-4"><span>1 Beginner</span><span>ไม่จับเวลา</span><span>เปิดตั้งแต่เริ่ม</span><span>×1.0</span></div>
-        <div class="guide-level-row guide-level-row-4"><span>2 Easy</span><span>60 วินาที</span><span>5,000 คะแนนในเลเวล 1</span><span>×1.2</span></div>
-        <div class="guide-level-row guide-level-row-4"><span>3 Medium</span><span>45 วินาที</span><span>15,000 คะแนนในเลเวล 2</span><span>×1.5</span></div>
-        <div class="guide-level-row guide-level-row-4"><span>4 Hard</span><span>30 วินาที</span><span>30,000 คะแนนในเลเวล 3</span><span>×2.0</span></div>
-        <div class="guide-level-row guide-level-row-4"><span>5 Expert</span><span>20 วินาที</span><span>50,000 คะแนนในเลเวล 4</span><span>×3.0</span></div>
+        <div class="guide-level-row guide-level-row-4"><span>2 Novice</span><span>90 วินาที</span><span>5,000 คะแนนในเลเวล 1</span><span>×1.1</span></div>
+        <div class="guide-level-row guide-level-row-4"><span>3 Apprentice</span><span>75 วินาที</span><span>10,000 คะแนนในเลเวล 2</span><span>×1.2</span></div>
+        <div class="guide-level-row guide-level-row-4"><span>4 Adept</span><span>60 วินาที</span><span>15,000 คะแนนในเลเวล 3</span><span>×1.4</span></div>
+        <div class="guide-level-row guide-level-row-4"><span>5 Skilled</span><span>45 วินาที</span><span>20,000 คะแนนในเลเวล 4</span><span>×1.6</span></div>
+        <div class="guide-level-row guide-level-row-4"><span>6 Expert</span><span>35 วินาที</span><span>30,000 คะแนนในเลเวล 5</span><span>×1.8</span></div>
+        <div class="guide-level-row guide-level-row-4"><span>7 Master</span><span>25 วินาที</span><span>40,000 คะแนนในเลเวล 6</span><span>×2.2</span></div>
+        <div class="guide-level-row guide-level-row-4"><span>8 Grandmaster</span><span>18 วินาที</span><span>50,000 คะแนนในเลเวล 7</span><span>×2.6</span></div>
+        <div class="guide-level-row guide-level-row-4"><span>9 Legend</span><span>12 วินาที</span><span>60,000 คะแนนในเลเวล 8</span><span>×3.0</span></div>
       </div>
       <p>ทุกเลเวลใช้เลข 1–9 เหมือนกัน <strong>ความต่างมีอย่างเดียวคือเวลาต่อข้อ</strong> ยิ่งเลเวลสูง เวลายิ่งน้อย แต่แลกมาด้วย<strong>ตัวคูณคะแนนที่สูงขึ้น</strong></p>
       <p>คะแนนที่ใช้ปลดล็อกนับเฉพาะ<strong>คะแนนที่ได้ในเลเวลนั้น</strong>ภายในซีซันปัจจุบัน เล่นเลเวลต่ำวนซ้ำไม่ช่วยให้ข้ามด่าน เมื่อเริ่มซีซันใหม่ทุกคนกลับไปเริ่มที่เลเวล 1</p>
@@ -159,7 +163,7 @@
         <li><img src="assets/badge-warrior50.png?v=3" alt=""><strong>นักสู้ 50 เกม</strong> — เล่นจบ Challenge ครบ 50 เกม</li>
         <li><img src="assets/badge-streak10.png?v=3" alt=""><strong>สตรีคเทพ (10+)</strong> — เคยทำสตรีคตอบถูกติดต่อกัน 10 ครั้งขึ้นไปในเกมเดียว</li>
         <li><img src="assets/badge-accurate.png?v=3" alt=""><strong>แม่นยำ (≥80%)</strong> — ตอบทั้งหมดสะสมอย่างน้อย 20 ข้อ และความแม่นยำเฉลี่ยรวม ≥ 80%</li>
-        <li><img src="assets/badge-expert.png?v=3" alt=""><strong>Expert Master</strong> — เคยเล่นและจบเกมที่ระดับ 5 (Expert) และตอบถูกติดต่อกัน 3 ข้อขึ้นไปในเกมนั้น</li>
+        <li><img src="assets/badge-expert.png?v=3" alt=""><strong>Expert Master</strong> — เคยเล่นเลเวล 6 (Expert) ขึ้นไป และตอบถูกติดต่อกัน 3 ข้อขึ้นไปในเกมนั้น</li>
         <li><img src="assets/badge-kilo.png?v=3" alt=""><strong>คะแนนทะลุ 1000</strong> — เคยทำคะแนนรวมในเกมเดียว 1,000 คะแนนขึ้นไป</li>
         <li><img src="assets/badge-deity.png?v=3" alt=""><strong>เทพเจ้า</strong> — เคยทำคะแนนรวมในเกมเดียว 100,000 คะแนนขึ้นไป</li>
       </ul>
